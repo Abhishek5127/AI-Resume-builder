@@ -59,7 +59,6 @@ export default function Home() {
   html2pdf().from(element).save("resume.pdf");
 };
 
-
   return (
     <div className="p-10 max-w-4xl mx-auto">
 
