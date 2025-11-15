@@ -1,0 +1,85 @@
+  @tailwind base;
+  @tailwind components;
+  @tailwind utilities;
+
+  @layer utilities {
+    .flex-center {
+      @apply items-center justify-center flex
+    }
+
+    .space-big {
+      @apply p-2 m-1
+    }
+
+    .get-hover-big {
+      @apply hover:scale-110 transition-all duration-300
+    }
+
+    .transition {
+      @apply transition-all duration-300
+    }
+
+    .fire-text {
+      @apply relative inline-block font-bold text-black px-3 py-1 cursor-pointer transition-all duration-300;
+      background: linear-gradient(90deg, #ff3c00, #ff7a00, #ffd500);
+      background-size: 200% 200%;
+      border-radius: 10px;
+      animation: fireGlow 2.4s infinite ease-in-out;
+      text-shadow: 0 0 10px #ff3c00, 0 0 20px #ff7a00, 0 0 35px #ffdd00;
+    }
+
+    .fire-text:hover {
+      @apply scale-110;
+      background: linear-gradient(90deg,
+          #ff0000,
+          #ff6a00,
+          #ffdd00,
+          #ffaa00,
+          #ff3c00);
+      background-size: 400% 400%;
+      animation: fireMove 1.2s infinite linear, fireFlicker 0.25s infinite;
+      border-radius: 16px;
+      box-shadow: 0 0 20px #ff3c00, 0 0 40px #ff4500, 0 0 70px #ffdd00;
+    }
+
+    /* 🔥 SMOKE / HEAT WAVES ON HOVER */
+    .fire-text:hover::after {
+      content: "";
+      @apply absolute inset-0 rounded-xl;
+      background: radial-gradient(circle, rgba(255, 140, 0, 0.4), transparent 70%);
+      animation: heatWave 1.5s infinite ease-in-out;
+      filter: blur(20px);
+      z-index: -1;
+    }
+  }
+
+  .button-theme {
+    @apply bg-green-600 text-xl rounded-sm font-bold cursor-pointer px-3 hover:bg-green-700 hover:rounded-xl hover:text-black;
+
+
+  }
+
+  @keyframes fireMove {
+    0% { background-position: 0% 50%; }
+    50% { background-position: 100% 50%; }
+    100% { background-position: 0% 50%; }
+  }
+
+  @keyframes fireGlow {
+    0% { filter: brightness(1); }
+    50% { filter: brightness(1.4); }
+    100% { filter: brightness(1); }
+  }
+
+  @keyframes fireFlicker {
+    0% { opacity: 1; transform: translateY(0); }
+    40% { opacity: .85; transform: translateY(-1px); }
+    60% { opacity: .95; transform: translateY(1px); }
+    100% { opacity: 1; transform: translateY(0); }
+  }
+
+  @keyframes heatWave {
+    0% { transform: scale(1); opacity: .3; }
+    50% { transform: scale(1.15); opacity: .45; }
+    100% { transform: scale(1); opacity: .3; }
+  }
