@@ -22,7 +22,7 @@
     .fire-text {
       @apply relative inline-block font-bold text-black px-3 py-1 cursor-pointer transition-all duration-300;
       background: linear-gradient(90deg, #ff3c00, #ff7a00, #ffd500);
-      background-size: 200% 200%;
+      background-size: 2% 2%;
       border-radius: 10px;
       animation: fireGlow 2.4s infinite ease-in-out;
       text-shadow: 0 0 10px #ff3c00, 0 0 20px #ff7a00, 0 0 35px #ffdd00;
@@ -36,10 +36,10 @@
           #ffdd00,
           #ffaa00,
           #ff3c00);
-      background-size: 400% 400%;
-      animation: fireMove 1.2s infinite linear, fireFlicker 0.25s infinite;
+      background-size: 300% 300%;
+      animation: fireMove 1.2s infinite linear, fireFlicker 0.55s infinite;
       border-radius: 16px;
-      box-shadow: 0 0 20px #ff3c00, 0 0 40px #ff4500, 0 0 70px #ffdd00;
+      box-shadow: 0 0 10px #ff3c00, 0 0 40px #ff4500, 0 0 50px #ffdd00;
     }
 
     /* 🔥 SMOKE / HEAT WAVES ON HOVER */

@@ -34,6 +34,34 @@ body {
   font-family: var(--font-fruktur);
 }
 
-.font-poppins{
+.font-poppins {
   font-family: var(--font-poppins);
+}
+
+.button-theme {
+  @apply bg-green-600 text-xl rounded-sm font-bold cursor-pointer px-3 hover:bg-green-700 hover:rounded-xl hover:text-black;
+
+
+}
+
+.transition {
+      @apply transition-all duration-300
+    }
+
+.input-dark {
+  @apply bg-[#1a1a1a] border border-gray-700 rounded-lg px-4 py-3 
+         text-white placeholder-gray-500 focus:ring-2 focus:ring-blue-500 
+         focus:outline-none;
+}
+
+.btn-next {
+  @apply px-6 py-3 bg-blue-600 rounded-md hover:bg-blue-700;
+}
+
+.btn-gray {
+  @apply px-6 py-3 bg-gray-700 rounded-md hover:bg-gray-600;
+}
+
+.btn-green {
+  @apply px-5 py-3 bg-green-600 rounded-md hover:bg-green-700;
 }
