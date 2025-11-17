@@ -26,6 +26,7 @@ export default function BuilderPage() {
   const [skillInput, setSkillInput] = useState("");
   const [languageInput, setLanguageInput] = useState("");
   const [projectInput, setProjectInput] = useState({ name: "", bullets: "" });
+  
 
   // Generic form change for top-level simple fields
   const handleChange = (e) => {
@@ -111,6 +112,10 @@ export default function BuilderPage() {
     setFormData(prev => ({ ...prev, projects: prev.projects.filter((_, idx) => idx !== i) }));
   };
 
+  const changeStep = (step)=>{
+    setStep(step)
+  }
+
   return (
     <div className="bg-[#0d0d0d] text-white min-h-screen grid grid-cols-1 md:grid-cols-[480px_1fr]">
 
@@ -118,10 +123,10 @@ export default function BuilderPage() {
       <div className="border-r border-gray-800 p-6 flex flex-col gap-6 bg-[#111]">
         {/* STEP INDICATOR */}
         <div className="flex items-center gap-3 text-sm text-gray-400">
-          <div className={`px-3 py-1 rounded ${step===1 ? "bg-blue-600" : "bg-transparent border border-gray-700"}`}>1</div>
-          <div className={`px-3 py-1 rounded ${step===2 ? "bg-blue-600" : "bg-transparent border border-gray-700"}`}>2</div>
-          <div className={`px-3 py-1 rounded ${step===3 ? "bg-blue-600" : "bg-transparent border border-gray-700"}`}>3</div>
-          <div className={`px-3 py-1 rounded ${step===4 ? "bg-blue-600" : "bg-transparent border border-gray-700"}`}>4</div>
+          <div onClick={()=>changeStep(1)} className={`px-3 cursor-pointer py-1 rounded ${step===1 ? "bg-blue-600" : "bg-transparent border border-gray-700"}`}>1</div>
+          <div onClick={()=>changeStep(2)} className={`px-3 cursor-pointer py-1 rounded ${step===2 ? "bg-blue-600" : "bg-transparent border border-gray-700"}`}>2</div>
+          <div onClick={()=>changeStep(3)} className={`px-3 cursor-pointer py-1 rounded ${step===3 ? "bg-blue-600" : "bg-transparent border border-gray-700"}`}>3</div>
+          <div onClick={()=>changeStep(4)} className={`px-3 cursor-pointer py-1 rounded ${step===4 ? "bg-blue-600" : "bg-transparent border border-gray-700"}`}>4</div>
         </div>
 
         {/* --- STEP 1: Personal --- */}

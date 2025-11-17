@@ -1,5 +1,5 @@
 export default function Template2({ data }) {
-  // safe defaults
+  
   const skills = Array.isArray(data.skills) ? data.skills : (data.skills ? [data.skills] : []);
   const langs = Array.isArray(data.languages) ? data.languages : (data.languages ? [data.languages] : []);
   const education = Array.isArray(data.education) ? data.education : [];
@@ -12,10 +12,10 @@ export default function Template2({ data }) {
       {/* HEADER */}
       <div className="text-center mb-10">
         <h1 className="text-5xl font-semibold tracking-wide">
-          {data.name || "OLIVIA WILSON"}
+          {data?.name?.toUpperCase() || "OLIVIA WILSON"}
         </h1>
         <p className="text-lg tracking-widest text-gray-500 mt-2">
-          {data.role || "MARKETING MANAGER"}
+          {data?.role?.toUpperCase() || "MARKETING MANAGER"}
         </p>
       </div>
 
@@ -42,8 +42,8 @@ export default function Template2({ data }) {
               education.map((edu, i) => (
                 <div key={i} className="mb-4 text-sm">
                   <p className="font-semibold">{edu.year}</p>
-                  <p className="uppercase tracking-wide text-gray-700">{edu.college}</p>
-                  <ul className="list-disc ml-5 mt-1">
+                  <p className="uppercase tracking-wide font-bold mt-2 text-gray-800">{edu?.college?.toUpperCase()}</p>
+                  <ul className="list-disc ml-3 mt-2">
                     {(edu.details || []).map((d, j) => <li key={j}>{d}</li>)}
                   </ul>
                 </div>
