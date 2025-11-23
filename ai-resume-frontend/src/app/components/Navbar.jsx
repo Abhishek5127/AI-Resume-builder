@@ -1,9 +1,8 @@
 "use client";
 
-
 export default function Navbar() {
   return (
-    <nav className="w-full px-8 py-4 flex justify-between items-center bg-[#1d1f1e] shadow-sm">
+    <nav className="w-full px-8 py-4 flex justify-between items-center bg-[#1d1f1e] shadow-sm sticky top-0 z-50">
       <h1 className="text-2xl font-bold text-blue-600">AI Resume Builder</h1>
 
       <div className="flex items-center gap-6 text-gray-700">
