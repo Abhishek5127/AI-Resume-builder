@@ -20,11 +20,12 @@ Return ONLY the following JSON:
 }
 
 RULES:
-- Max length: 440 CHARACTERS (NOT words)
+- Max length: 40 words
 - Use clean corporate language
 - No exaggeration
 - No buzzword spam
 - 1 paragraph only
+- must be 40 words or less
 - Strong verbs, real experience tone
             `
           },

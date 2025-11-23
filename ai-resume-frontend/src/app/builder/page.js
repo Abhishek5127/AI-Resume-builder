@@ -1,9 +1,12 @@
 "use client";
 
 import { useState, useEffect } from "react";
-import Template2 from "../components/templates/Template2";
+import Template2 from "../components/templates/Template3";
 import axios from "axios";
 import Navbar from "../components/Navbar";
+import Template3 from "../components/templates/Template1";
+import Template4 from "../components/templates/Template4";
+
 
 export default function BuilderPage() {
   // Limits (as agreed)
@@ -258,6 +261,42 @@ export default function BuilderPage() {
     }));
   };
 
+  const enhanceProject = async () => {
+    if (!projectInput.name || !projectInput.bullets.trim()) {
+      alert("Project name and bullets required");
+      return;
+    }
+
+    try {
+      const payload = {
+        name: projectInput.name,
+        bullets: projectInput.bullets.split("\n"),
+      };
+
+      const result = await axios.post(
+        "http://localhost:5000/api/project/enhance",
+        payload
+      );
+
+      const improvedBullets = result.data?.enhanced;
+
+      if (!improvedBullets) {
+        alert("Enhancer returned no data");
+        return;
+      }
+
+      setProjectInput(prev => ({
+        ...prev,
+        bullets: improvedBullets.join("\n")
+      }));
+
+    } catch (error) {
+      console.error(error);
+      alert("Error enhancing project");
+    }
+  };
+
+
   // Predict Skills (restored)
   const predictSkills = async () => {
     if (!formData.role || !formData.role.trim()) {
@@ -291,14 +330,14 @@ export default function BuilderPage() {
 
     <div className="min-h-screen bg-[#0d0d0f] text-gray-100">
       <Navbar />
-      <div className="max-w-[1500px] mx-auto p-6 md:p-10 grid grid-cols-1 lg:grid-cols-[420px_1fr] gap-8">
+      <div className="max-w-[1500px] mx-auto p-6 md:p-10 grid grid-cols-1 lg:grid-cols-[520px_1fr] gap-8">
 
         {/* LEFT FORM (white cards) */}
         <div className="bg-white rounded-xl shadow-lg p-6 text-gray-900">
           <div className="flex items-start justify-between gap-4">
             <div>
               <h3 className="text-xl font-semibold">Resume Builder</h3>
-              <p className="text-sm text-gray-500 mt-1">Modern • Neutral gray accents • 1 page</p>
+              
             </div>
             <div className="text-right">
 
@@ -503,6 +542,13 @@ export default function BuilderPage() {
 
                 <div className="flex gap-2 mt-3">
                   <button onClick={addProject} disabled={formData.projects.length >= LIMITS.projects} className={`px-3 py-2 rounded-md text-sm ${formData.projects.length >= LIMITS.projects ? "bg-gray-200 text-gray-400" : "bg-gray-900 text-white"}`}>Add</button>
+                  <button
+                    onClick={enhanceProject}
+                    className="px-5 py-3 bg-purple-600 rounded-md hover:bg-purple-700"
+                  >
+                    Enhance ✨
+                  </button>
+
                   <button onClick={() => setProjectInput({ name: "", bullets: "" })} className="px-3 py-2 rounded-md bg-gray-50 text-sm border border-gray-100">Clear</button>
                 </div>
 
@@ -547,14 +593,14 @@ export default function BuilderPage() {
                   style={{
                     width: 850,
                     height: 1123,
-                    transform: "scale(0.9)",
+                    transform: "scale(0.95)",
                     transformOrigin: "top center",
                     boxShadow: "0 12px 30px rgba(0,0,0,0.06)",
                     borderRadius: 8,
                     overflow: "hidden",
                   }}
                 >
-                  <Template2 data={formData} previewMode={true} />
+                  <Template4 data={formData} previewMode={true} />
                 </div>
               </div>
 

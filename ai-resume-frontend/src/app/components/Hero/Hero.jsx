@@ -46,8 +46,8 @@ const Hero = () => {
           </div>
 
           <div className="flex-center gap-10 font-poppins mt-10">
-            <CTAButton   href='/builder' icon={assets.CV} label='Create CV' />
-            <CTAButton href='/create-resume-select-template' icon={assets.Resume} label='Create Resume' />
+            <CTAButton   href='' icon={assets.CV} label='Create CV' />
+            <CTAButton href='/builder' icon={assets.Resume} label='Create Resume' />
 
           </div>
         </div>
