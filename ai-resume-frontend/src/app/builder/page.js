@@ -6,6 +6,8 @@ import axios from "axios";
 import Navbar from "../components/Navbar";
 import Template3 from "../components/templates/Template1";
 import Template4 from "../components/templates/Template4";
+import Template5 from "../components/templates/Template5";
+import Template6 from "../components/templates/Template6";
 
 
 export default function BuilderPage() {
@@ -98,6 +100,9 @@ export default function BuilderPage() {
     languages: [],
     projects: [],
     website: "",
+    useAchievements: false,
+    achievements: [],
+
   });
 
   // Local inputs
@@ -337,7 +342,7 @@ export default function BuilderPage() {
           <div className="flex items-start justify-between gap-4">
             <div>
               <h3 className="text-xl font-semibold">Resume Builder</h3>
-              
+
             </div>
             <div className="text-right">
 
@@ -536,43 +541,186 @@ export default function BuilderPage() {
 
             {step === 5 && (
               <>
-                <h4 className="text-lg font-semibold">Projects</h4>
-                <input name="name" value={projectInput.name} onChange={handleProjectChange} placeholder="Project Name" className="w-full rounded-md border border-gray-200 p-2" />
-                <textarea name="bullets" value={projectInput.bullets} onChange={handleProjectChange} placeholder="• bullet per line" className="w-full rounded-md border border-gray-200 p-2 mt-2 h-24" />
+                <h4 className="text-lg font-semibold">Projects / Achievements</h4>
 
-                <div className="flex gap-2 mt-3">
-                  <button onClick={addProject} disabled={formData.projects.length >= LIMITS.projects} className={`px-3 py-2 rounded-md text-sm ${formData.projects.length >= LIMITS.projects ? "bg-gray-200 text-gray-400" : "bg-gray-900 text-white"}`}>Add</button>
+                {/* Toggle */}
+                <div className="flex items-center gap-2 mb-4 mt-1">
+                  <input
+                    type="checkbox"
+                    checked={formData.useAchievements || false}
+                    onChange={(e) =>
+                      setFormData(prev => ({ ...prev, useAchievements: e.target.checked }))
+                    }
+                    className="w-4 h-4"
+                  />
+                  <label className="text-sm text-gray-700">
+                    Use Achievements instead of Projects
+                  </label>
+                </div>
+
+                {/* ========================= ACHIEVEMENTS MODE ========================= */}
+                {formData.useAchievements ? (
+                  <>
+                    <textarea
+                      placeholder="• Achievement per line (max 6)"
+                      value={projectInput.bullets}
+                      onChange={(e) =>
+                        setProjectInput(prev => ({ ...prev, bullets: e.target.value }))
+                      }
+                      className="w-full rounded-md border border-gray-200 p-2 h-28"
+                    />
+
+                    <div className="flex gap-2 mt-3">
+                      <button
+                        onClick={() => {
+                          const lines = projectInput.bullets
+                            .split("\n")
+                            .filter((x) => x.trim() !== "");
+
+                          if (lines.length > 6) {
+                            alert("Only 6 achievements allowed");
+                            return;
+                          }
+
+                          setFormData(prev => ({
+                            ...prev,
+                            achievements: lines,
+                          }));
+                        }}
+                        className="px-4 py-2 bg-gray-900 text-white rounded-md text-sm"
+                      >
+                        Save Achievements
+                      </button>
+
+                      <button
+                        onClick={() => setProjectInput({ name: "", bullets: "" })}
+                        className="px-4 py-2 rounded-md bg-gray-50 text-sm border border-gray-100"
+                      >
+                        Clear
+                      </button>
+                    </div>
+
+                    {/* Display saved achievements */}
+                    <div className="mt-4 space-y-3">
+                      {(formData.achievements || []).map((a, i) => (
+                        <div
+                          key={i}
+                          className="p-3 bg-gray-50 rounded-md flex justify-between items-center"
+                        >
+                          <span className="text-sm">{a}</span>
+                          <button
+                            onClick={() =>
+                              setFormData(prev => ({
+                                ...prev,
+                                achievements: prev.achievements.filter((_, idx) => idx !== i),
+                              }))
+                            }
+                            className="text-xs text-red-500"
+                          >
+                            Remove
+                          </button>
+                        </div>
+                      ))}
+
+                      {(formData.achievements || []).length === 0 && (
+                        <div className="text-sm text-gray-400">No achievements added</div>
+                      )}
+                    </div>
+                  </>
+                ) : (
+                  /* ========================= PROJECT MODE ========================= */
+                  <>
+                    <input
+                      name="name"
+                      value={projectInput.name}
+                      onChange={handleProjectChange}
+                      placeholder="Project Name"
+                      className="w-full rounded-md border border-gray-200 p-2"
+                    />
+
+                    <textarea
+                      name="bullets"
+                      value={projectInput.bullets}
+                      onChange={handleProjectChange}
+                      placeholder="• bullet per line"
+                      className="w-full rounded-md border border-gray-200 p-2 mt-2 h-24"
+                    />
+
+                    <div className="flex gap-2 mt-3">
+                      <button
+                        onClick={addProject}
+                        disabled={formData.projects.length >= LIMITS.projects}
+                        className={`px-3 py-2 rounded-md text-sm ${formData.projects.length >= LIMITS.projects
+                            ? "bg-gray-200 text-gray-400"
+                            : "bg-gray-900 text-white"
+                          }`}
+                      >
+                        Add
+                      </button>
+
+                      <button
+                        onClick={enhanceProject}
+                        className="px-5 py-3 bg-purple-600 rounded-md hover:bg-purple-700"
+                      >
+                        Enhance ✨
+                      </button>
+
+                      <button
+                        onClick={() => setProjectInput({ name: "", bullets: "" })}
+                        className="px-3 py-2 rounded-md bg-gray-50 text-sm border border-gray-100"
+                      >
+                        Clear
+                      </button>
+                    </div>
+
+                    {/* DISPLAY PROJECTS */}
+                    <div className="mt-3 space-y-3">
+                      {formData.projects.map((p, i) => (
+                        <div key={i} className="p-3 bg-gray-50 rounded-md">
+                          <div className="flex justify-between">
+                            <div className="font-semibold">{p.name}</div>
+                            <button
+                              onClick={() => removeProject(i)}
+                              className="text-xs text-red-500"
+                            >
+                              Remove
+                            </button>
+                          </div>
+
+                          <ul className="list-disc ml-5 mt-2 text-sm text-gray-700">
+                            {p.bullets.map((b, bi) => (
+                              <li key={bi}>{b}</li>
+                            ))}
+                          </ul>
+                        </div>
+                      ))}
+
+                      {formData.projects.length === 0 && (
+                        <div className="text-sm text-gray-400">No projects added</div>
+                      )}
+                    </div>
+                  </>
+                )}
+
+                {/* FOOTER */}
+                <div className="flex justify-between mt-4">
                   <button
-                    onClick={enhanceProject}
-                    className="px-5 py-3 bg-purple-600 rounded-md hover:bg-purple-700"
+                    onClick={() => setStep(4)}
+                    className="px-3 py-2 rounded-md bg-gray-50 text-sm border border-gray-100"
                   >
-                    Enhance ✨
+                    ← Back
                   </button>
 
-                  <button onClick={() => setProjectInput({ name: "", bullets: "" })} className="px-3 py-2 rounded-md bg-gray-50 text-sm border border-gray-100">Clear</button>
-                </div>
-
-                <div className="mt-3 space-y-3">
-                  {formData.projects.map((p, i) => (
-                    <div key={i} className="p-3 bg-gray-50 rounded-md">
-                      <div className="flex justify-between">
-                        <div className="font-semibold">{p.name}</div>
-                        <button onClick={() => removeProject(i)} className="text-xs text-red-500">Remove</button>
-                      </div>
-                      <ul className="list-disc ml-5 mt-2 text-sm text-gray-700">
-                        {p.bullets.map((b, bi) => <li key={bi}>{b}</li>)}
-                      </ul>
-                    </div>
-                  ))}
-                  {formData.projects.length === 0 && <div className="text-sm text-gray-400">No projects added</div>}
-                </div>
-
-                <div className="flex justify-between mt-4">
-                  <button onClick={() => setStep(4)} className="px-3 py-2 rounded-md bg-gray-50 text-sm border border-gray-100">← Back</button>
-                  <button onClick={() => setStep(1)} className="px-3 py-2 rounded-md bg-gray-900 text-white text-sm">Finish</button>
+                  <button
+                    onClick={() => setStep(1)}
+                    className="px-3 py-2 rounded-md bg-gray-900 text-white text-sm"
+                  >
+                    Finish
+                  </button>
                 </div>
               </>
             )}
+
           </div>
 
           {/* notice */}
@@ -600,7 +748,7 @@ export default function BuilderPage() {
                     overflow: "hidden",
                   }}
                 >
-                  <Template4 data={formData} previewMode={true} />
+                  <Template6 data={formData} previewMode={true} />
                 </div>
               </div>
 

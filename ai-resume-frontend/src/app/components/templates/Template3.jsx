@@ -6,7 +6,7 @@ export default function Template2({ data = {}, previewMode = false }) {
   const experience = Array.isArray(data.experience) ? data.experience : [];
   const projects = Array.isArray(data.projects) ? data.projects : [];
 
-  const name = (data?.name || "OLIVIA WILSON").toUpperCase();
+  const name = (data?.name || "OLIVIA WILSON ").toUpperCase();
   const role = (data?.role || "MARKETING MANAGER").toUpperCase();
   const phone = data?.phone || "+123-456-7890";
   const email = data?.email || "hello@email.com";
