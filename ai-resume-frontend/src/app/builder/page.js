@@ -1,5 +1,5 @@
 "use client";
-
+import { useRef } from "react";
 import { useState, useEffect } from "react";
 import Template2 from "../components/templates/Template3";
 import axios from "axios";
@@ -9,11 +9,17 @@ import Template4 from "../components/templates/Template4";
 import Template5 from "../components/templates/Template5";
 import Template6 from "../components/templates/Template6";
 import { useSearchParams } from "next/navigation";
+import { handleDownloadPDF } from "../utils/downloadPdf";
 
 
 
 
 export default function BuilderPage() {
+
+
+
+
+
   // Limits (as agreed)
   const LIMITS = {
     skills: 8,
@@ -197,6 +203,7 @@ export default function BuilderPage() {
     setLanguageInput("");
   };
 
+
   const removeLanguage = (i) => {
     setFormData((prev) => ({
       ...prev,
@@ -341,6 +348,12 @@ export default function BuilderPage() {
 
   const templates = [Template2, Template3, Template4, Template5, Template6];
   const SelectedTemplate = templates[templateIndex];
+
+  //Download code
+
+  const templateRef = useRef(null);
+
+
 
 
   // -------------------- UI ---------------------
@@ -763,16 +776,18 @@ export default function BuilderPage() {
                     overflow: "hidden",
                   }}
                 >
-                   <SelectedTemplate data={formData} />
+                  <SelectedTemplate data={formData} forwardedRef={templateRef} />
+
                 </div>
               </div>
 
-              <button 
-    
-    className="mt-6 px-6 py-3 bg-blue-600 rounded-md"
-  >
-    Download PDF
-  </button>
+
+              <button
+                onClick={() => handleDownloadPDF(templateRef, "resume.pdf")}
+                className="mt-6 px-6 py-3 bg-blue-600 rounded-md"
+              >
+                Download PDF
+              </button>
 
             </div>
           </div>

@@ -1,5 +1,7 @@
-// Template2.jsx
-export default function Template2({ data = {}, previewMode = false }) {
+// Template3.jsx
+
+import React from "react";
+export default function Template2({ data = {}, previewMode = false, forwardedRef }) {
   const skills = Array.isArray(data.skills) ? data.skills : (data.skills ? [data.skills] : []);
   const langs = Array.isArray(data.languages) ? data.languages : (data.languages ? [data.languages] : []);
   const education = Array.isArray(data.education) ? data.education : [];
@@ -14,8 +16,9 @@ export default function Template2({ data = {}, previewMode = false }) {
   const website = data?.website || "www.portfolio.com";
   const summary = data?.summary || "Experienced and results-driven Marketing Manager with a proven track record in strategy, branding, analytics, and leadership.";
 
+  
   return (
-    <div
+    <div ref={forwardedRef}
       className="bg-white font-body text-gray-900 w-[850px] h-[1123px] box-border border border-gray-200 overflow-hidden"
       aria-label="Resume page"
     >
@@ -149,6 +152,7 @@ export default function Template2({ data = {}, previewMode = false }) {
                 <div className="text-xs text-gray-400">({Math.min(projects.length, 3)} / 3)</div>
               </div>
 
+
               <div className="mt-3 text-sm text-gray-800 space-y-2">
                 {projects.length > 0 ? projects.slice(0, 3).map((p, i) => (
                   <div key={i}>
@@ -165,8 +169,9 @@ export default function Template2({ data = {}, previewMode = false }) {
               </div>
             </section>
           </main>
-        </div>        
+        </div>
       </div>
+
     </div>
   );
 }
