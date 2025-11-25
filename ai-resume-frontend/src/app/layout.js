@@ -31,6 +31,8 @@ export default function RootLayout({ children }) {
   return (
      <html lang="en" className={`${fruktur.variable} ${poppins.variable}`}>
       <body className={inter.className}>{children}</body>
+      
+
     </html>
   );
 }

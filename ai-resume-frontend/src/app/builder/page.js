@@ -8,6 +8,9 @@ import Template3 from "../components/templates/Template1";
 import Template4 from "../components/templates/Template4";
 import Template5 from "../components/templates/Template5";
 import Template6 from "../components/templates/Template6";
+import { useSearchParams } from "next/navigation";
+
+
 
 
 export default function BuilderPage() {
@@ -329,6 +332,17 @@ export default function BuilderPage() {
     return () => clearTimeout(t);
   }, [notice]);
 
+  // Template code here
+
+  const searchParams = useSearchParams();
+  const selected = searchParams.get("template"); // gets index
+
+  const templateIndex = selected ? Number(selected) : 0;
+
+  const templates = [Template2, Template3, Template4, Template5, Template6];
+  const SelectedTemplate = templates[templateIndex];
+
+
   // -------------------- UI ---------------------
 
   return (
@@ -361,7 +375,7 @@ export default function BuilderPage() {
                 {n}
               </button>
             ))}
-            
+
           </div>
 
           {/* content */}
@@ -652,8 +666,8 @@ export default function BuilderPage() {
                         onClick={addProject}
                         disabled={formData.projects.length >= LIMITS.projects}
                         className={`px-3 py-2 rounded-md text-sm ${formData.projects.length >= LIMITS.projects
-                            ? "bg-gray-200 text-gray-400"
-                            : "bg-gray-900 text-white"
+                          ? "bg-gray-200 text-gray-400"
+                          : "bg-gray-900 text-white"
                           }`}
                       >
                         Add
@@ -749,9 +763,16 @@ export default function BuilderPage() {
                     overflow: "hidden",
                   }}
                 >
-                  <Template2 data={formData} previewMode={true} />
+                   <SelectedTemplate data={formData} />
                 </div>
               </div>
+
+              <button 
+    
+    className="mt-6 px-6 py-3 bg-blue-600 rounded-md"
+  >
+    Download PDF
+  </button>
 
             </div>
           </div>
