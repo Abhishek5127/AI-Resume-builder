@@ -5,6 +5,8 @@ import "./Hero.css";
 import { assets } from "@/app/assets/assets";
 import { useRouter } from "next/navigation";
 
+
+
 const Hero = () => {
 
   const router = useRouter();
@@ -40,17 +42,19 @@ const Hero = () => {
             <span className="text-[#FFFF00] hover:underline hover:text-[#fcdc3e] text-[40px]">Winning</span>
             <span>Resume with AI</span>
           </div>
+          
 
           <div className="fire-text text-3xl my-6">
             Turn Your Boring Resume Into <br /> Pure Fire
           </div>
 
           <div className="flex-center gap-10 font-poppins mt-10">
-            <CTAButton   href='' icon={assets.CV} label='Create CV' />
+            <CTAButton   href='/select-template' icon={assets.CV} label='Create CV' />
             <CTAButton href='/builder' icon={assets.Resume} label='Create Resume' />
 
           </div>
         </div>
+        
 
         {/* RIGHT COLUMN */}
         <div className="flex justify-end">

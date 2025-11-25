@@ -361,6 +361,7 @@ export default function BuilderPage() {
                 {n}
               </button>
             ))}
+            
           </div>
 
           {/* content */}
@@ -748,7 +749,7 @@ export default function BuilderPage() {
                     overflow: "hidden",
                   }}
                 >
-                  <Template6 data={formData} previewMode={true} />
+                  <Template2 data={formData} previewMode={true} />
                 </div>
               </div>
 
