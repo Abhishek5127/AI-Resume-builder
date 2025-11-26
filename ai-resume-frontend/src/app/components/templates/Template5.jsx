@@ -1,5 +1,5 @@
 // Template5.jsx — Classic Sidebar Resume (Navy Edition) + Achievements Section
-export default function Template5({ data = {} }) {
+export default function Template5({ data = {}, forwardedRef }) {
   // ---------------------------------
   // SMART DEFAULT FALLBACK VALUES
   // ---------------------------------
@@ -93,7 +93,7 @@ export default function Template5({ data = {} }) {
   // ---------------------------------
 
   return (
-    <div className="w-[850px] h-[1123px] bg-white font-sans text-gray-900 border border-gray-300 overflow-hidden">
+    <div ref={forwardedRef} className="w-[850px] h-[1123px] bg-white font-sans text-gray-900 border border-gray-300 overflow-hidden">
 
       {/* HEADER */}
       <header className="text-center py-8 border-b border-gray-300">

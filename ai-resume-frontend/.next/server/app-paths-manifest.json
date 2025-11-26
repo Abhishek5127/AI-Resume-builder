@@ -1,4 +1,6 @@
 {
+  "/select-template/page": "app/select-template/page.js",
+  "/page": "app/page.js",
   "/builder/page": "app/builder/page.js",
-  "/select-template/page": "app/select-template/page.js"
+  "/preview/page": "app/preview/page.js"
 }

@@ -1,26 +1,38 @@
 "use client";
-import { useRef } from "react";
-import { useState, useEffect } from "react";
+
+import { useRef, useState, useEffect } from "react";
 import Template2 from "../components/templates/Template3";
-import axios from "axios";
-import Navbar from "../components/Navbar";
 import Template3 from "../components/templates/Template1";
 import Template4 from "../components/templates/Template4";
 import Template5 from "../components/templates/Template5";
 import Template6 from "../components/templates/Template6";
-import { useSearchParams } from "next/navigation";
-import { handleDownloadPDF } from "../utils/downloadPdf";
+import axios from "axios";
+import Navbar from "../components/Navbar";
+import { useSearchParams, useRouter } from "next/navigation";
 
+const STORAGE_KEY = "resume-builder-data";
+const DRAFTS_KEY = "resume-builder-drafts";
 
-
+const DEFAULT_FORM = {
+  
+  name: "",
+  role: "",
+  summary: "",
+  skills: [],
+  phone: "",
+  email: "",
+  address: "",
+  education: [],
+  experience: [],
+  languages: [],
+  projects: [],
+  website: "",
+  useAchievements: false,
+  achievements: [],
+};
 
 export default function BuilderPage() {
-
-
-
-
-
-  // Limits (as agreed)
+  // Limits
   const LIMITS = {
     skills: 8,
     experience: 2,
@@ -30,98 +42,126 @@ export default function BuilderPage() {
     summary: 450,
   };
 
+  // --- Synchronously initialize formData from localStorage to avoid flash/overwrite ---
+  const [formData, setFormData] = useState(() => {
+    try {
+      if (typeof window === "undefined") return DEFAULT_FORM;
+      const saved = localStorage.getItem("resume-builder-data");
+      return saved ? JSON.parse(saved) : DEFAULT_FORM;
+    } catch (err) {
+      console.error("Failed to parse saved formData:", err);
+      return DEFAULT_FORM;
+    }
+  });
+
+  // temporary/draft inputs (persisted separately)
+  const [educationInput, setEducationInput] = useState(() => {
+    try {
+      if (typeof window === "undefined") return { year: "", college: "", details: "" };
+      const drafts = localStorage.getItem(DRAFTS_KEY);
+      const parsed = drafts ? JSON.parse(drafts) : null;
+      return parsed?.educationInput ?? { year: "", college: "", details: "" };
+    } catch {
+      return { year: "", college: "", details: "" };
+    }
+  });
+
+  const [experienceInput, setExperienceInput] = useState(() => {
+    try {
+      if (typeof window === "undefined") return { company: "", role: "", date: "", bullets: "" };
+      const drafts = localStorage.getItem(DRAFTS_KEY);
+      const parsed = drafts ? JSON.parse(drafts) : null;
+      return parsed?.experienceInput ?? { company: "", role: "", date: "", bullets: "" };
+    } catch {
+      return { company: "", role: "", date: "", bullets: "" };
+    }
+  });
+
+  const [projectInput, setProjectInput] = useState(() => {
+    try {
+      if (typeof window === "undefined") return { name: "", bullets: "" };
+      const drafts = localStorage.getItem(DRAFTS_KEY);
+      const parsed = drafts ? JSON.parse(drafts) : null;
+      return parsed?.projectInput ?? { name: "", bullets: "" };
+    } catch {
+      return { name: "", bullets: "" };
+    }
+  });
+
+  const [skillInput, setSkillInput] = useState(() => {
+    try {
+      if (typeof window === "undefined") return "";
+      const drafts = localStorage.getItem(DRAFTS_KEY);
+      const parsed = drafts ? JSON.parse(drafts) : null;
+      return parsed?.skillInput ?? "";
+    } catch {
+      return "";
+    }
+  });
+
+  const [languageInput, setLanguageInput] = useState(() => {
+    try {
+      if (typeof window === "undefined") return "";
+      const drafts = localStorage.getItem(DRAFTS_KEY);
+      const parsed = drafts ? JSON.parse(drafts) : null;
+      return parsed?.languageInput ?? "";
+    } catch {
+      return "";
+    }
+  });
+
+  // UI state
   const [step, setStep] = useState(1);
   const [suggestedSkills, setSuggestedSkills] = useState([]);
   const [showSuggestions, setShowSuggestions] = useState(false);
   const [notice, setNotice] = useState("");
 
-  // Convert ANY value into clean textarea-safe string
+  // templates array (no dropdown UI)
+  const templates = [Template2, Template3, Template4, Template5, Template6];
+  const SelectedTemplate = templates[formData.templateIndex ?? 0];
+
+  const router = useRouter();
+
+  // Utility: ensure string conversion for saved bullets etc.
   const ensureString = (value) => {
     if (Array.isArray(value)) return value.join("\n\n");
     if (typeof value === "object" && value !== null) return "";
     return value || "";
   };
 
-  // Enhance Summary
-
-  const getEnhancedSummary = async () => {
+  // Persist formData to localStorage whenever it changes
+  useEffect(() => {
     try {
-      const result = await axios.post(
-        "http://localhost:5000/api/summary",
-        {
-          role: formData.role,
-          summary: formData.summary
-        }
-      );
-
-      const newText = result.data?.enhanced?.summary;
-
-      if (newText) {
-        setFormData(prev => ({ ...prev, summary: newText }));
-      }
-
+      localStorage.setItem(STORAGE_KEY, JSON.stringify(formData));
     } catch (err) {
-      alert("Error generating summary");
+      console.error("Failed saving formData:", err);
     }
-  };
+  }, [formData]);
 
-
-  // AI enhance work experience (unchanged)
-  const getEnhancedData = async () => {
-    const bulletsString = ensureString(experienceInput.bullets);
-    if (!bulletsString.trim()) return;
-
-    const payload = {
-      company: experienceInput.company,
-      role: experienceInput.role,
-      date: experienceInput.date,
-      bullets: bulletsString,
-    };
-
+  // Persist drafts (temporary inputs) whenever they change
+  useEffect(() => {
     try {
-      const result = await axios.post(
-        "http://localhost:5000/api/enhance/enhance",
-        payload
-      );
-
-      const enhancedArray = result.data.enhanced?.bullets || [];
-      setExperienceInput((prev) => ({
-        ...prev,
-        bullets: enhancedArray.join("\n"),
-      }));
+      const drafts = {
+        educationInput,
+        experienceInput,
+        projectInput,
+        skillInput,
+        languageInput,
+      };
+      localStorage.setItem(DRAFTS_KEY, JSON.stringify(drafts));
     } catch (err) {
-      setNotice("Enhance failed — check server");
-      setTimeout(() => setNotice(""), 2600);
+      console.error("Failed saving drafts:", err);
     }
-  };
+  }, [educationInput, experienceInput, projectInput, skillInput, languageInput]);
 
-  // MAIN RESUME DATA (contact fields restored)
-  const [formData, setFormData] = useState({
-    name: "",
-    role: "",
-    summary: "",
-    skills: [],
-    phone: "",
-    email: "",
-    address: "",
-    education: [],
-    experience: [],
-    languages: [],
-    projects: [],
-    website: "",
-    useAchievements: false,
-    achievements: [],
+  // Notice auto-clear
+  useEffect(() => {
+    if (!notice) return;
+    const t = setTimeout(() => setNotice(""), 2500);
+    return () => clearTimeout(t);
+  }, [notice]);
 
-  });
-
-  // Local inputs
-  const [educationInput, setEducationInput] = useState({ year: "", college: "", details: "" });
-  const [experienceInput, setExperienceInput] = useState({ company: "", role: "", date: "", bullets: "" });
-  const [skillInput, setSkillInput] = useState("");
-  const [languageInput, setLanguageInput] = useState("");
-  const [projectInput, setProjectInput] = useState({ name: "", bullets: "" });
-
-  // Global change handler (summary char enforcement)
+  // --- Handlers for form changes (these update state only) ---
   const handleChange = (e) => {
     const { name, value } = e.target;
 
@@ -137,7 +177,7 @@ export default function BuilderPage() {
     setFormData((prev) => ({ ...prev, [name]: value }));
   };
 
-  // EDUCATION
+  // Education input handlers
   const handleEducationChange = (e) => {
     setEducationInput((prev) => ({ ...prev, [e.target.name]: e.target.value }));
   };
@@ -170,7 +210,7 @@ export default function BuilderPage() {
     }));
   };
 
-  // SKILLS
+  // Skills
   const addSkill = () => {
     const v = skillInput.trim();
     if (!v) return;
@@ -184,13 +224,10 @@ export default function BuilderPage() {
   };
 
   const removeSkill = (i) => {
-    setFormData((prev) => ({
-      ...prev,
-      skills: prev.skills.filter((_, idx) => idx !== i),
-    }));
+    setFormData((prev) => ({ ...prev, skills: prev.skills.filter((_, idx) => idx !== i) }));
   };
 
-  // LANGUAGES
+  // Languages
   const addLanguage = () => {
     const v = languageInput.trim();
     if (!v) return;
@@ -203,15 +240,11 @@ export default function BuilderPage() {
     setLanguageInput("");
   };
 
-
   const removeLanguage = (i) => {
-    setFormData((prev) => ({
-      ...prev,
-      languages: prev.languages.filter((_, idx) => idx !== i),
-    }));
+    setFormData((prev) => ({ ...prev, languages: prev.languages.filter((_, idx) => idx !== i) }));
   };
 
-  // EXPERIENCE
+  // Experience
   const handleExperienceChange = (e) => {
     setExperienceInput((prev) => ({ ...prev, [e.target.name]: e.target.value }));
   };
@@ -241,13 +274,10 @@ export default function BuilderPage() {
   };
 
   const removeExperience = (i) => {
-    setFormData((prev) => ({
-      ...prev,
-      experience: prev.experience.filter((_, idx) => idx !== i),
-    }));
+    setFormData((prev) => ({ ...prev, experience: prev.experience.filter((_, idx) => idx !== i) }));
   };
 
-  // PROJECTS
+  // Projects
   const handleProjectChange = (e) => {
     setProjectInput((prev) => ({ ...prev, [e.target.name]: e.target.value }));
   };
@@ -270,10 +300,42 @@ export default function BuilderPage() {
   };
 
   const removeProject = (i) => {
-    setFormData((prev) => ({
-      ...prev,
-      projects: prev.projects.filter((_, idx) => idx !== i),
-    }));
+    setFormData((prev) => ({ ...prev, projects: prev.projects.filter((_, idx) => idx !== i) }));
+  };
+
+  // Enhance functions (unchanged)
+  const getEnhancedSummary = async () => {
+    try {
+      const result = await axios.post("http://localhost:5000/api/summary", {
+        role: formData.role,
+        summary: formData.summary,
+      });
+      const newText = result.data?.enhanced?.summary;
+      if (newText) setFormData((prev) => ({ ...prev, summary: newText }));
+    } catch (err) {
+      alert("Error generating summary");
+    }
+  };
+
+  const getEnhancedData = async () => {
+    const bulletsString = ensureString(experienceInput.bullets);
+    if (!bulletsString.trim()) return;
+
+    const payload = {
+      company: experienceInput.company,
+      role: experienceInput.role,
+      date: experienceInput.date,
+      bullets: bulletsString,
+    };
+
+    try {
+      const result = await axios.post("http://localhost:5000/api/enhance/enhance", payload);
+      const enhancedArray = result.data.enhanced?.bullets || [];
+      setExperienceInput((prev) => ({ ...prev, bullets: enhancedArray.join("\n") }));
+    } catch (err) {
+      setNotice("Enhance failed — check server");
+      setTimeout(() => setNotice(""), 2600);
+    }
   };
 
   const enhanceProject = async () => {
@@ -288,31 +350,20 @@ export default function BuilderPage() {
         bullets: projectInput.bullets.split("\n"),
       };
 
-      const result = await axios.post(
-        "http://localhost:5000/api/project/enhance",
-        payload
-      );
-
+      const result = await axios.post("http://localhost:5000/api/project/enhance", payload);
       const improvedBullets = result.data?.enhanced;
-
       if (!improvedBullets) {
         alert("Enhancer returned no data");
         return;
       }
-
-      setProjectInput(prev => ({
-        ...prev,
-        bullets: improvedBullets.join("\n")
-      }));
-
+      setProjectInput((prev) => ({ ...prev, bullets: improvedBullets.join("\n") }));
     } catch (error) {
       console.error(error);
       alert("Error enhancing project");
     }
   };
 
-
-  // Predict Skills (restored)
+  // Predict skills
   const predictSkills = async () => {
     if (!formData.role || !formData.role.trim()) {
       setNotice("Enter role to predict skills");
@@ -332,47 +383,61 @@ export default function BuilderPage() {
     }
   };
 
-  // Notice auto-clear
-  useEffect(() => {
-    if (!notice) return;
-    const t = setTimeout(() => setNotice(""), 2500);
-    return () => clearTimeout(t);
-  }, [notice]);
+  const handleClearAll = () => {
+  // Confirm with user (optional)
+  if (!confirm("Clear all resume data? This cannot be undone.")) return;
 
-  // Template code here
+  // Use functional update to ensure we get the latest prev state
+  setFormData(prev => {
+    const preservedTemplate = typeof prev?.templateIndex !== "undefined" ? prev.templateIndex : 0;
+    const newForm = { ...DEFAULT_FORM, templateIndex: preservedTemplate };
 
-  const searchParams = useSearchParams();
-  const selected = searchParams.get("template"); // gets index
+    // persist immediately
+    try {
+      localStorage.setItem("resume-builder-data", JSON.stringify(newForm));
+    } catch (e) {
+      console.warn("Could not write cleared data to localStorage", e);
+    }
 
-  const templateIndex = selected ? Number(selected) : 0;
+    return newForm;
+  });
 
-  const templates = [Template2, Template3, Template4, Template5, Template6];
-  const SelectedTemplate = templates[templateIndex];
+  // Clear local input states you use for small add-forms
+  setEducationInput({ year: "", college: "", details: "" });
+  setExperienceInput({ company: "", role: "", date: "", bullets: "" });
+  setSkillInput("");
+  setLanguageInput("");
+  setProjectInput({ name: "", bullets: "" });
 
-  //Download code
+  // any other UI state that needs reset
+  setSuggestedSkills([]);
+  setShowSuggestions(false);
+  setNotice("");
+};
 
-  const templateRef = useRef(null);
 
+  // Preview: simply push to /preview — preview page should read localStorage.
+  const goToPreview = () => {
+    // ensure latest data is saved (useEffect already saves, but do it explicitly)
+    try {
+      localStorage.setItem(STORAGE_KEY, JSON.stringify(formData));
+    } catch { }
+    router.push("/preview");
+  };
 
-
-
-  // -------------------- UI ---------------------
-
+  // UI --- kept close to original, with template dropdown removed.
   return (
-
     <div className="min-h-screen bg-[#0d0d0f] text-gray-100">
       <Navbar />
       <div className="max-w-[1500px] mx-auto p-6 md:p-10 grid grid-cols-1 lg:grid-cols-[520px_1fr] gap-8">
-
-        {/* LEFT FORM (white cards) */}
+        {/* LEFT FORM */}
         <div className="bg-white rounded-xl shadow-lg p-6 text-gray-900">
           <div className="flex items-start justify-between gap-4">
             <div>
               <h3 className="text-xl font-semibold">Resume Builder</h3>
-
             </div>
             <div className="text-right">
-
+              <button onClick={handleClearAll} className="text-sm text-red-500">Clear All</button>
             </div>
           </div>
 
@@ -382,13 +447,11 @@ export default function BuilderPage() {
               <button
                 key={n}
                 onClick={() => setStep(n)}
-                className={`py-2 text-xs rounded-md transition ${step === n ? "bg-gray-900 text-white" : "bg-gray-50 text-gray-700 border border-gray-100"
-                  }`}
+                className={`py-2 text-xs rounded-md transition ${step === n ? "bg-gray-900 text-white" : "bg-gray-50 text-gray-700 border border-gray-100"}`}
               >
                 {n}
               </button>
             ))}
-
           </div>
 
           {/* content */}
@@ -396,18 +459,14 @@ export default function BuilderPage() {
             {step === 1 && (
               <>
                 <h4 className="text-lg font-semibold">Personal</h4>
-
                 <input name="name" value={formData.name} onChange={handleChange} placeholder="Full name" className="w-full rounded-md border border-gray-200 p-2" />
                 <input name="role" value={formData.role} onChange={handleChange} placeholder="Role (Frontend Developer)" className="w-full rounded-md border border-gray-200 p-2 mt-2" />
-
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-2 mt-2">
                   <input name="phone" value={formData.phone} onChange={handleChange} placeholder="Phone" className="rounded-md border border-gray-200 p-2" />
                   <input name="email" value={formData.email} onChange={handleChange} placeholder="Email" className="rounded-md border border-gray-200 p-2" />
                 </div>
-
                 <input name="website" value={formData.website} onChange={handleChange} placeholder="Website" className="w-full rounded-md border border-gray-200 p-2 mt-2" />
                 <input name="address" value={formData.address} onChange={handleChange} placeholder="City, Country" className="w-full rounded-md border border-gray-200 p-2 mt-2" />
-
                 <textarea name="summary" value={formData.summary} onChange={handleChange} placeholder="Short summary (max 450 chars)" className="w-full rounded-md border border-gray-200 p-2 mt-2 h-28" />
                 <div className="flex justify-between items-center text-sm text-gray-500 mt-1">
                   <span>{formData.summary.length}/{LIMITS.summary}</span>
@@ -426,7 +485,6 @@ export default function BuilderPage() {
                 <input name="year" value={educationInput.year} onChange={handleEducationChange} placeholder="2020 - 2024" className="w-full rounded-md border border-gray-200 p-2" />
                 <input name="college" value={educationInput.college} onChange={handleEducationChange} placeholder="University Name" className="w-full rounded-md border border-gray-200 p-2 mt-2" />
                 <textarea name="details" value={educationInput.details} onChange={handleEducationChange} placeholder="• bullet per line" className="w-full rounded-md border border-gray-200 p-2 mt-2 h-20" />
-
                 <div className="flex gap-2 mt-3">
                   <button onClick={addEducation} disabled={formData.education.length >= LIMITS.education} className={`px-3 py-2 rounded-md text-sm ${formData.education.length >= LIMITS.education ? "bg-gray-200 text-gray-400" : "bg-gray-900 text-white"}`}>Add</button>
                   <button onClick={() => setEducationInput({ year: "", college: "", details: "" })} className="px-3 py-2 rounded-md bg-gray-50 text-sm border border-gray-100">Clear</button>
@@ -498,7 +556,6 @@ export default function BuilderPage() {
             {step === 4 && (
               <>
                 <h4 className="text-lg font-semibold">Skills & Languages</h4>
-
                 <div className="flex items-center gap-2">
                   <input value={skillInput} onChange={(e) => setSkillInput(e.target.value)} placeholder="React, Tailwind..." className="flex-1 rounded-md border border-gray-200 p-2" />
                   <button onClick={addSkill} disabled={formData.skills.length >= LIMITS.skills} className={`px-3 py-2 rounded-md ${formData.skills.length >= LIMITS.skills ? "bg-gray-200 text-gray-400" : "bg-gray-900 text-white"}`}>Add</button>
@@ -513,7 +570,6 @@ export default function BuilderPage() {
                   ))}
                 </div>
 
-                {/* Predict skills restored */}
                 <div className="mt-3">
                   <button onClick={predictSkills} className="px-3 py-2 rounded-md bg-gray-700 text-white text-sm">Predict Skills ⚡</button>
                 </div>
@@ -570,229 +626,109 @@ export default function BuilderPage() {
             {step === 5 && (
               <>
                 <h4 className="text-lg font-semibold">Projects / Achievements</h4>
-
-                {/* Toggle */}
                 <div className="flex items-center gap-2 mb-4 mt-1">
                   <input
                     type="checkbox"
                     checked={formData.useAchievements || false}
-                    onChange={(e) =>
-                      setFormData(prev => ({ ...prev, useAchievements: e.target.checked }))
-                    }
+                    onChange={(e) => setFormData(prev => ({ ...prev, useAchievements: e.target.checked }))}
                     className="w-4 h-4"
                   />
-                  <label className="text-sm text-gray-700">
-                    Use Achievements instead of Projects
-                  </label>
+                  <label className="text-sm text-gray-700">Use Achievements instead of Projects</label>
                 </div>
 
-                {/* ========================= ACHIEVEMENTS MODE ========================= */}
                 {formData.useAchievements ? (
                   <>
-                    <textarea
-                      placeholder="• Achievement per line (max 6)"
-                      value={projectInput.bullets}
-                      onChange={(e) =>
-                        setProjectInput(prev => ({ ...prev, bullets: e.target.value }))
-                      }
-                      className="w-full rounded-md border border-gray-200 p-2 h-28"
-                    />
-
+                    <textarea placeholder="• Achievement per line (max 6)" value={projectInput.bullets} onChange={(e) => setProjectInput(prev => ({ ...prev, bullets: e.target.value }))} className="w-full rounded-md border border-gray-200 p-2 h-28" />
                     <div className="flex gap-2 mt-3">
-                      <button
-                        onClick={() => {
-                          const lines = projectInput.bullets
-                            .split("\n")
-                            .filter((x) => x.trim() !== "");
-
-                          if (lines.length > 6) {
-                            alert("Only 6 achievements allowed");
-                            return;
-                          }
-
-                          setFormData(prev => ({
-                            ...prev,
-                            achievements: lines,
-                          }));
-                        }}
-                        className="px-4 py-2 bg-gray-900 text-white rounded-md text-sm"
-                      >
-                        Save Achievements
-                      </button>
-
-                      <button
-                        onClick={() => setProjectInput({ name: "", bullets: "" })}
-                        className="px-4 py-2 rounded-md bg-gray-50 text-sm border border-gray-100"
-                      >
-                        Clear
-                      </button>
+                      <button onClick={() => {
+                        const lines = projectInput.bullets.split("\n").filter(x => x.trim() !== "");
+                        if (lines.length > 6) { alert("Only 6 achievements allowed"); return; }
+                        setFormData(prev => ({ ...prev, achievements: lines }));
+                      }} className="px-4 py-2 bg-gray-900 text-white rounded-md text-sm">Save Achievements</button>
+                      <button onClick={() => setProjectInput({ name: "", bullets: "" })} className="px-4 py-2 rounded-md bg-gray-50 text-sm border border-gray-100">Clear</button>
                     </div>
 
-                    {/* Display saved achievements */}
                     <div className="mt-4 space-y-3">
                       {(formData.achievements || []).map((a, i) => (
-                        <div
-                          key={i}
-                          className="p-3 bg-gray-50 rounded-md flex justify-between items-center"
-                        >
+                        <div key={i} className="p-3 bg-gray-50 rounded-md flex justify-between items-center">
                           <span className="text-sm">{a}</span>
-                          <button
-                            onClick={() =>
-                              setFormData(prev => ({
-                                ...prev,
-                                achievements: prev.achievements.filter((_, idx) => idx !== i),
-                              }))
-                            }
-                            className="text-xs text-red-500"
-                          >
-                            Remove
-                          </button>
+                          <button onClick={() => setFormData(prev => ({ ...prev, achievements: prev.achievements.filter((_, idx) => idx !== i) }))} className="text-xs text-red-500">Remove</button>
                         </div>
                       ))}
-
-                      {(formData.achievements || []).length === 0 && (
-                        <div className="text-sm text-gray-400">No achievements added</div>
-                      )}
+                      {(formData.achievements || []).length === 0 && <div className="text-sm text-gray-400">No achievements added</div>}
                     </div>
                   </>
                 ) : (
-                  /* ========================= PROJECT MODE ========================= */
                   <>
-                    <input
-                      name="name"
-                      value={projectInput.name}
-                      onChange={handleProjectChange}
-                      placeholder="Project Name"
-                      className="w-full rounded-md border border-gray-200 p-2"
-                    />
-
-                    <textarea
-                      name="bullets"
-                      value={projectInput.bullets}
-                      onChange={handleProjectChange}
-                      placeholder="• bullet per line"
-                      className="w-full rounded-md border border-gray-200 p-2 mt-2 h-24"
-                    />
-
+                    <input name="name" value={projectInput.name} onChange={handleProjectChange} placeholder="Project Name" className="w-full rounded-md border border-gray-200 p-2" />
+                    <textarea name="bullets" value={projectInput.bullets} onChange={handleProjectChange} placeholder="• bullet per line" className="w-full rounded-md border border-gray-200 p-2 mt-2 h-24" />
                     <div className="flex gap-2 mt-3">
-                      <button
-                        onClick={addProject}
-                        disabled={formData.projects.length >= LIMITS.projects}
-                        className={`px-3 py-2 rounded-md text-sm ${formData.projects.length >= LIMITS.projects
-                          ? "bg-gray-200 text-gray-400"
-                          : "bg-gray-900 text-white"
-                          }`}
-                      >
-                        Add
-                      </button>
-
-                      <button
-                        onClick={enhanceProject}
-                        className="px-5 py-3 bg-purple-600 rounded-md hover:bg-purple-700"
-                      >
-                        Enhance ✨
-                      </button>
-
-                      <button
-                        onClick={() => setProjectInput({ name: "", bullets: "" })}
-                        className="px-3 py-2 rounded-md bg-gray-50 text-sm border border-gray-100"
-                      >
-                        Clear
-                      </button>
+                      <button onClick={addProject} disabled={formData.projects.length >= LIMITS.projects} className={`px-3 py-2 rounded-md text-sm ${formData.projects.length >= LIMITS.projects ? "bg-gray-200 text-gray-400" : "bg-gray-900 text-white"}`}>Add</button>
+                      <button onClick={enhanceProject} className="px-5 py-3 bg-purple-600 rounded-md hover:bg-purple-700">Enhance ✨</button>
+                      <button onClick={() => setProjectInput({ name: "", bullets: "" })} className="px-3 py-2 rounded-md bg-gray-50 text-sm border border-gray-100">Clear</button>
                     </div>
 
-                    {/* DISPLAY PROJECTS */}
                     <div className="mt-3 space-y-3">
                       {formData.projects.map((p, i) => (
                         <div key={i} className="p-3 bg-gray-50 rounded-md">
                           <div className="flex justify-between">
                             <div className="font-semibold">{p.name}</div>
-                            <button
-                              onClick={() => removeProject(i)}
-                              className="text-xs text-red-500"
-                            >
-                              Remove
-                            </button>
+                            <button onClick={() => removeProject(i)} className="text-xs text-red-500">Remove</button>
                           </div>
-
                           <ul className="list-disc ml-5 mt-2 text-sm text-gray-700">
-                            {p.bullets.map((b, bi) => (
-                              <li key={bi}>{b}</li>
-                            ))}
+                            {p.bullets.map((b, bi) => <li key={bi}>{b}</li>)}
                           </ul>
                         </div>
                       ))}
-
-                      {formData.projects.length === 0 && (
-                        <div className="text-sm text-gray-400">No projects added</div>
-                      )}
+                      {formData.projects.length === 0 && <div className="text-sm text-gray-400">No projects added</div>}
                     </div>
                   </>
                 )}
 
-                {/* FOOTER */}
                 <div className="flex justify-between mt-4">
-                  <button
-                    onClick={() => setStep(4)}
-                    className="px-3 py-2 rounded-md bg-gray-50 text-sm border border-gray-100"
-                  >
-                    ← Back
-                  </button>
-
-                  <button
-                    onClick={() => setStep(1)}
-                    className="px-3 py-2 rounded-md bg-gray-900 text-white text-sm"
-                  >
-                    Finish
-                  </button>
+                  <button onClick={() => setStep(4)} className="px-3 py-2 rounded-md bg-gray-50 text-sm border border-gray-100">← Back</button>
+                  <button onClick={() => setStep(1)} className="px-3 py-2 rounded-md bg-gray-900 text-white text-sm">Finish</button>
                 </div>
               </>
             )}
 
           </div>
 
-          {/* notice */}
           {notice && <div className="mt-4 text-sm text-orange-400">{notice}</div>}
         </div>
 
-        {/* RIGHT PREVIEW (scaled to 60%) */}
+        {/* RIGHT PREVIEW (scaled) */}
         <div className="flex-1">
           <div className="sticky top-6">
             <div className="bg-white rounded-xl border border-gray-100 shadow p-6">
-              <div className="flex items-center justify-between mb-4">
-                Preview
-              </div>
+              <div className="flex items-center justify-between mb-4">Preview</div>
 
               <div className="flex justify-center">
-                {/* wrapper that scales the resume to 60% for a full-page preview */}
-                <div
-                  style={{
-                    width: 850,
-                    height: 1123,
-                    transform: "scale(0.95)",
-                    transformOrigin: "top center",
-                    boxShadow: "0 12px 30px rgba(0,0,0,0.06)",
-                    borderRadius: 8,
-                    overflow: "hidden",
-                  }}
-                >
-                  <SelectedTemplate data={formData} forwardedRef={templateRef} />
-
+                <div style={{
+                  width: 850,
+                  height: 1123,
+                  transform: "scale(0.95)",
+                  transformOrigin: "top center",
+                  boxShadow: "0 12px 30px rgba(0,0,0,0.06)",
+                  borderRadius: 8,
+                  overflow: "hidden",
+                }}>
+                  {/* Render the selected template using current formData */}
+                  <SelectedTemplate data={formData} />
                 </div>
               </div>
 
-
-              <button
-                onClick={() => handleDownloadPDF(templateRef, "resume.pdf")}
-                className="mt-6 px-6 py-3 bg-blue-600 rounded-md"
-              >
-                Download PDF
-              </button>
-
+              <div className="mt-4 flex gap-2">
+                <button onClick={goToPreview} className="px-4 py-2 bg-gray-900 text-white rounded-md">Preview Resume</button>
+                <button onClick={() => {
+                  // quick "save snapshot" - ensures storage has latest (useful before pdf generation)
+                  try { localStorage.setItem(STORAGE_KEY, JSON.stringify(formData)); } catch { }
+                  setNotice("Saved");
+                }} className="px-4 py-2 bg-gray-50 border rounded-md">Save</button>
+              </div>
             </div>
           </div>
         </div>
-
       </div>
     </div>
   );

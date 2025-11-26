@@ -18,14 +18,14 @@ export default function Template3({ data = {}, forwardedRef}) {
   return (
     <div ref={forwardedRef}
       className="
-        w-[850px] 
+        w-[794px] 
         h-[1123px] 
         bg-gray-50 
         font-sans 
         text-gray-900 
         border border-gray-200 
         box-border 
-        overflow-visible
+        overflow-hidden
       "
     >
 
