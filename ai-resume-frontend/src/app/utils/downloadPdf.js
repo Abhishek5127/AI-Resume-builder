@@ -7,7 +7,7 @@ export const handleDownloadPDF = async (elementRef, filename = "resume.pdf") => 
 
   // 1) Render canvas at high DPI (2 or 3 is enough)
   const canvas = await html2canvas(element, {
-    scale: 3,
+    scale: 4,
     useCORS: true,
   });
 
