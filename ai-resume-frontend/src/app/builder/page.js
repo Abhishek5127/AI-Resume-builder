@@ -119,7 +119,6 @@ export default function BuilderPage() {
   // templates array (no dropdown UI)
   const templates = [Template2, Template3, Template4, Template5, Template6];
   const SelectedTemplate = templates[formData.templateIndex ?? 0];
-
   const router = useRouter();
 
   // Utility: ensure string conversion for saved bullets etc.
