@@ -384,7 +384,7 @@ export default function BuilderPage() {
   // Enhance functions (unchanged logic but with safety)
   const getEnhancedSummary = async () => {
     try {
-      const result = await axios.post("https://resume-backend-xyz.onrender.com/api/summary", {
+      const result = await axios.post("https://ai-resume-builder-qgwa.onrender.com/api/summary", {
         role: formData.role,
         summary: formData.summary,
       });
@@ -409,7 +409,7 @@ export default function BuilderPage() {
     };
 
     try {
-      const result = await axios.post("https://resume-backend-xyz.onrender.com/api/enhance/enhance", payload);
+      const result = await axios.post("https://ai-resume-builder-qgwa.onrender.com/api/enhance/enhance", payload);
       const enhancedArrayRaw = result.data?.enhanced?.bullets || [];
       const enhancedArray = arr(enhancedArrayRaw).map((x) => safeString(x));
       setExperienceInput((prev) => ({ ...prev, bullets: enhancedArray.join("\n") }));
@@ -431,7 +431,7 @@ export default function BuilderPage() {
         bullets: projectInput.bullets.split("\n").map((s) => safeString(s)).filter(Boolean),
       };
 
-      const result = await axios.post("https://resume-backend-xyz.onrender.com/api/project/enhance", payload);
+      const result = await axios.post("https://ai-resume-builder-qgwa.onrender.com/api/project/enhance", payload);
       const improvedBulletsRaw = result.data?.enhanced;
       const improvedBullets = arr(improvedBulletsRaw).map((b) => safeString(b));
       if (!improvedBullets.length) {
@@ -453,7 +453,7 @@ export default function BuilderPage() {
       return;
     }
     try {
-      const res = await axios.post("https://resume-backend-xyz.onrender.com/api/enhance/predict-skills", {
+      const res = await axios.post("https://ai-resume-builder-qgwa.onrender.com//api/enhance/predict-skills", {
         role: formData.role.trim(),
       });
       const s = arr(res.data?.skills).map((x) => safeString(x));
