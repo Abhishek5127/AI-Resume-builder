@@ -1,5 +1,5 @@
 // Template3.jsx — Strict One-Page Pastel Creative Resume (Left Sidebar + Right Content)
-export default function Template3({ data = {}, forwardedRef}) {
+export default function Template3({ data = {}, }) {
   // SAME LOGIC — DO NOT CHANGE
   const skills = Array.isArray(data.skills) ? data.skills : (data.skills ? [data.skills] : []);
   const langs = Array.isArray(data.languages) ? data.languages : (data.languages ? [data.languages] : []);
@@ -16,7 +16,7 @@ export default function Template3({ data = {}, forwardedRef}) {
   const summary = data?.summary || "Experienced and results-driven Marketing Manager skilled in strategy, branding, analytics, and leadership.";
 
   return (
-    <div ref={forwardedRef}
+    <div 
       className="
         w-[794px] 
         h-[1123px] 

@@ -1,7 +1,7 @@
 // Template6.jsx
 import { useEffect, useRef, useState } from "react";
 
-export default function Template6({ data = {}, previewMode = false,forwardedRef }) {
+export default function Template6({ data = {}, previewMode = false, }) {
   const {
     name = "OLIVIA WILSON",
     role = "SOFTWARE ENGINEER",
@@ -72,7 +72,7 @@ export default function Template6({ data = {}, previewMode = false,forwardedRef 
 
   return (
     <div
-      ref={forwardedRef}
+      
       className="bg-white text-gray-900 font-sans"
       style={{
         width: "850px",

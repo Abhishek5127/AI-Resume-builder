@@ -1,7 +1,7 @@
 // Template3.jsx
 
 import React from "react";
-export default function Template2({ data = {}, previewMode = false, forwardedRef }) {
+export default function Template2({ data = {}, previewMode = false,  }) {
   const skills = Array.isArray(data.skills) ? data.skills : (data.skills ? [data.skills] : []);
   const langs = Array.isArray(data.languages) ? data.languages : (data.languages ? [data.languages] : []);
   const education = Array.isArray(data.education) ? data.education : [];
@@ -18,7 +18,7 @@ export default function Template2({ data = {}, previewMode = false, forwardedRef
 
   
   return (
-    <div ref={forwardedRef}
+    <div 
       className="bg-white font-body text-gray-900 w-[850px] h-[1123px] box-border border border-gray-200 overflow-hidden"
       aria-label="Resume page"
     >

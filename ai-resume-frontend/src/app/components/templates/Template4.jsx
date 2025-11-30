@@ -1,6 +1,6 @@
 // Template4.jsx — Tech Startup Resume (with smart defaults + strict A4 layout)
 
-export default function Template4({ data = {}, forwardedRef }) {
+export default function Template4({ data = {},  }) {
   // -----------------------------
   // SMART DEFAULT FALLBACK LOGIC
   // -----------------------------
@@ -125,7 +125,7 @@ export default function Template4({ data = {}, forwardedRef }) {
   // -----------------------------
 
   return (
-    <div ref={forwardedRef} className="w-[850px] h-[1123px] bg-white font-sans text-gray-900 box-border border border-gray-200 overflow-visible p-10">
+    <div className="w-[850px] h-[1123px] bg-white font-sans text-gray-900 box-border border border-gray-200 overflow-visible p-10">
 
       {/* HEADER */}
       <header className="w-full border-b border-gray-300 pb-4">
