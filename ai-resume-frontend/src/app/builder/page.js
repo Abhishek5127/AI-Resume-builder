@@ -14,7 +14,6 @@ const STORAGE_KEY = "resume-builder-data";
 const DRAFTS_KEY = "resume-builder-drafts";
 
 const DEFAULT_FORM = {
-  
   name: "",
   role: "",
   summary: "",
@@ -29,6 +28,7 @@ const DEFAULT_FORM = {
   website: "",
   useAchievements: false,
   achievements: [],
+  templateIndex: 0,
 };
 
 export default function BuilderPage() {
@@ -42,12 +42,56 @@ export default function BuilderPage() {
     summary: 450,
   };
 
+  // ----- Small helpers for safety -----
+  const arr = (v) => (Array.isArray(v) ? v : []);
+  const num = (v) => (typeof v === "number" && !Number.isNaN(v) ? v : 0);
+  const safeString = (v) =>
+    typeof v === "string" ? v : v == null ? "" : String(v);
+  const clampIndex = (i, max) =>
+    typeof i === "number" && i >= 0 && i < max ? i : 0;
+
+  const sanitizeFormData = (raw) => {
+    // Merge with defaults then coerce each field to safe types
+    const base = { ...DEFAULT_FORM, ...(raw || {}) };
+
+    return {
+      name: safeString(base.name),
+      role: safeString(base.role),
+      summary: safeString(base.summary).slice(0, LIMITS.summary),
+      skills: arr(base.skills).slice(0, LIMITS.skills),
+      phone: safeString(base.phone),
+      email: safeString(base.email),
+      address: safeString(base.address),
+      education: arr(base.education).map((e) => ({
+        year: safeString(e?.year),
+        college: safeString(e?.college),
+        details: arr(e?.details).map((d) => safeString(d)),
+      })).slice(0, LIMITS.education),
+      experience: arr(base.experience).map((ex) => ({
+        company: safeString(ex?.company),
+        role: safeString(ex?.role),
+        date: safeString(ex?.date),
+        bullets: arr(ex?.bullets).map((b) => safeString(b)),
+      })).slice(0, LIMITS.experience),
+      languages: arr(base.languages).slice(0, LIMITS.languages).map((l) => safeString(l)),
+      projects: arr(base.projects).map((p) => ({
+        name: safeString(p?.name),
+        bullets: arr(p?.bullets).map((b) => safeString(b)),
+      })).slice(0, LIMITS.projects),
+      website: safeString(base.website),
+      useAchievements: Boolean(base.useAchievements),
+      achievements: arr(base.achievements).map((a) => safeString(a)),
+      templateIndex: clampIndex(num(base.templateIndex), 5), // templates length = 5
+    };
+  };
+
   // --- Synchronously initialize formData from localStorage to avoid flash/overwrite ---
   const [formData, setFormData] = useState(() => {
     try {
       if (typeof window === "undefined") return DEFAULT_FORM;
-      const saved = localStorage.getItem("resume-builder-data");
-      return saved ? JSON.parse(saved) : DEFAULT_FORM;
+      const savedRaw = localStorage.getItem(STORAGE_KEY);
+      const parsed = savedRaw ? JSON.parse(savedRaw) : null;
+      return sanitizeFormData(parsed);
     } catch (err) {
       console.error("Failed to parse saved formData:", err);
       return DEFAULT_FORM;
@@ -60,7 +104,8 @@ export default function BuilderPage() {
       if (typeof window === "undefined") return { year: "", college: "", details: "" };
       const drafts = localStorage.getItem(DRAFTS_KEY);
       const parsed = drafts ? JSON.parse(drafts) : null;
-      return parsed?.educationInput ?? { year: "", college: "", details: "" };
+      const p = parsed?.educationInput ?? { year: "", college: "", details: "" };
+      return { year: safeString(p.year), college: safeString(p.college), details: safeString(p.details) };
     } catch {
       return { year: "", college: "", details: "" };
     }
@@ -71,7 +116,8 @@ export default function BuilderPage() {
       if (typeof window === "undefined") return { company: "", role: "", date: "", bullets: "" };
       const drafts = localStorage.getItem(DRAFTS_KEY);
       const parsed = drafts ? JSON.parse(drafts) : null;
-      return parsed?.experienceInput ?? { company: "", role: "", date: "", bullets: "" };
+      const p = parsed?.experienceInput ?? { company: "", role: "", date: "", bullets: "" };
+      return { company: safeString(p.company), role: safeString(p.role), date: safeString(p.date), bullets: safeString(p.bullets) };
     } catch {
       return { company: "", role: "", date: "", bullets: "" };
     }
@@ -82,7 +128,8 @@ export default function BuilderPage() {
       if (typeof window === "undefined") return { name: "", bullets: "" };
       const drafts = localStorage.getItem(DRAFTS_KEY);
       const parsed = drafts ? JSON.parse(drafts) : null;
-      return parsed?.projectInput ?? { name: "", bullets: "" };
+      const p = parsed?.projectInput ?? { name: "", bullets: "" };
+      return { name: safeString(p.name), bullets: safeString(p.bullets) };
     } catch {
       return { name: "", bullets: "" };
     }
@@ -93,7 +140,7 @@ export default function BuilderPage() {
       if (typeof window === "undefined") return "";
       const drafts = localStorage.getItem(DRAFTS_KEY);
       const parsed = drafts ? JSON.parse(drafts) : null;
-      return parsed?.skillInput ?? "";
+      return safeString(parsed?.skillInput ?? "");
     } catch {
       return "";
     }
@@ -104,7 +151,7 @@ export default function BuilderPage() {
       if (typeof window === "undefined") return "";
       const drafts = localStorage.getItem(DRAFTS_KEY);
       const parsed = drafts ? JSON.parse(drafts) : null;
-      return parsed?.languageInput ?? "";
+      return safeString(parsed?.languageInput ?? "");
     } catch {
       return "";
     }
@@ -116,25 +163,49 @@ export default function BuilderPage() {
   const [showSuggestions, setShowSuggestions] = useState(false);
   const [notice, setNotice] = useState("");
 
-  // templates array (no dropdown UI)
+  // templates array (keep ordering as-is)
   const templates = [Template2, Template3, Template4, Template5, Template6];
-  const SelectedTemplate = templates[formData.templateIndex ?? 0];
+
+  // safely clamp template index and always have a valid SelectedTemplate
+  const safeIndex =
+    typeof formData.templateIndex === "number" &&
+    formData.templateIndex >= 0 &&
+    formData.templateIndex < templates.length
+      ? formData.templateIndex
+      : 0;
+  const SelectedTemplate = templates[safeIndex] || templates[0];
+
   const router = useRouter();
 
   // Utility: ensure string conversion for saved bullets etc.
   const ensureString = (value) => {
     if (Array.isArray(value)) return value.join("\n\n");
     if (typeof value === "object" && value !== null) return "";
-    return value || "";
+    return typeof value === "string" ? value : "";
   };
 
-  // Persist formData to localStorage whenever it changes
+  // Persist formData to localStorage whenever it changes (store sanitized)
   useEffect(() => {
     try {
-      localStorage.setItem(STORAGE_KEY, JSON.stringify(formData));
+      // Sanitize just before saving to avoid corruption
+      const safe = sanitizeFormData(formData);
+      // If sanitized differs from current formData, update state quietly to keep invariants
+      // Note: shallow compare minimal fields to avoid infinite loops
+      const needsUpdate =
+        safe.templateIndex !== formData.templateIndex ||
+        safe.summary !== formData.summary ||
+        safe.name !== formData.name;
+      if (needsUpdate) {
+        setFormData(safe);
+        // still save safe below
+        localStorage.setItem(STORAGE_KEY, JSON.stringify(safe));
+      } else {
+        localStorage.setItem(STORAGE_KEY, JSON.stringify(safe));
+      }
     } catch (err) {
       console.error("Failed saving formData:", err);
     }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [formData]);
 
   // Persist drafts (temporary inputs) whenever they change
@@ -164,155 +235,165 @@ export default function BuilderPage() {
   const handleChange = (e) => {
     const { name, value } = e.target;
 
+    // Always coerce input values to safe types
+    const safeVal = name === "summary" ? safeString(value).slice(0, LIMITS.summary) : safeString(value);
+
     if (name === "summary") {
-      if (value.length > LIMITS.summary) {
+      if (safeVal.length > LIMITS.summary) {
         setNotice(`Summary max ${LIMITS.summary} characters`);
         setTimeout(() => setNotice(""), 2200);
-        setFormData((prev) => ({ ...prev, summary: value.slice(0, LIMITS.summary) }));
+        setFormData((prev) => ({ ...prev, summary: safeVal.slice(0, LIMITS.summary) }));
         return;
       }
     }
 
-    setFormData((prev) => ({ ...prev, [name]: value }));
+    setFormData((prev) => ({ ...prev, [name]: safeVal }));
   };
 
   // Education input handlers
   const handleEducationChange = (e) => {
-    setEducationInput((prev) => ({ ...prev, [e.target.name]: e.target.value }));
+    setEducationInput((prev) => ({ ...prev, [e.target.name]: safeString(e.target.value) }));
   };
 
   const addEducation = () => {
-    if (!educationInput.year || !educationInput.college) return;
-    if (formData.education.length >= LIMITS.education) {
+    if (!educationInput.year.trim() || !educationInput.college.trim()) return;
+    const currentLen = arr(formData.education).length;
+    if (currentLen >= LIMITS.education) {
       setNotice(`Maximum ${LIMITS.education} education entries allowed`);
       setTimeout(() => setNotice(""), 2000);
       return;
     }
-    setFormData((prev) => ({
-      ...prev,
-      education: [
-        ...prev.education,
+    setFormData((prev) => {
+      const newEducation = [
+        ...arr(prev.education),
         {
-          year: educationInput.year,
-          college: educationInput.college,
-          details: educationInput.details ? educationInput.details.split("\n") : [],
+          year: safeString(educationInput.year),
+          college: safeString(educationInput.college),
+          details: educationInput.details ? educationInput.details.split("\n").map(safeString) : [],
         },
-      ],
-    }));
+      ].slice(0, LIMITS.education);
+      return { ...prev, education: newEducation };
+    });
     setEducationInput({ year: "", college: "", details: "" });
   };
 
   const removeEducation = (i) => {
-    setFormData((prev) => ({
-      ...prev,
-      education: prev.education.filter((_, idx) => idx !== i),
-    }));
+    setFormData((prev) => ({ ...prev, education: arr(prev.education).filter((_, idx) => idx !== i) }));
   };
 
   // Skills
   const addSkill = () => {
-    const v = skillInput.trim();
+    const v = safeString(skillInput).trim();
     if (!v) return;
-    if (formData.skills.length >= LIMITS.skills) {
+    const currentLen = arr(formData.skills).length;
+    if (currentLen >= LIMITS.skills) {
       setNotice(`Maximum ${LIMITS.skills} skills allowed`);
       setTimeout(() => setNotice(""), 2000);
       return;
     }
-    setFormData((prev) => ({ ...prev, skills: [...prev.skills, v] }));
+    setFormData((prev) => ({ ...prev, skills: [...arr(prev.skills), v].slice(0, LIMITS.skills) }));
     setSkillInput("");
   };
 
   const removeSkill = (i) => {
-    setFormData((prev) => ({ ...prev, skills: prev.skills.filter((_, idx) => idx !== i) }));
+    setFormData((prev) => ({ ...prev, skills: arr(prev.skills).filter((_, idx) => idx !== i) }));
   };
 
   // Languages
   const addLanguage = () => {
-    const v = languageInput.trim();
+    const v = safeString(languageInput).trim();
     if (!v) return;
-    if (formData.languages.length >= LIMITS.languages) {
+    const currentLen = arr(formData.languages).length;
+    if (currentLen >= LIMITS.languages) {
       setNotice(`Maximum ${LIMITS.languages} languages allowed`);
       setTimeout(() => setNotice(""), 2000);
       return;
     }
-    setFormData((prev) => ({ ...prev, languages: [...prev.languages, v] }));
+    setFormData((prev) => ({ ...prev, languages: [...arr(prev.languages), v].slice(0, LIMITS.languages) }));
     setLanguageInput("");
   };
 
   const removeLanguage = (i) => {
-    setFormData((prev) => ({ ...prev, languages: prev.languages.filter((_, idx) => idx !== i) }));
+    setFormData((prev) => ({ ...prev, languages: arr(prev.languages).filter((_, idx) => idx !== i) }));
   };
 
   // Experience
   const handleExperienceChange = (e) => {
-    setExperienceInput((prev) => ({ ...prev, [e.target.name]: e.target.value }));
+    setExperienceInput((prev) => ({ ...prev, [e.target.name]: safeString(e.target.value) }));
   };
 
   const addExperience = () => {
-    if (!experienceInput.company || !experienceInput.role) return;
-    if (formData.experience.length >= LIMITS.experience) {
+    if (!experienceInput.company.trim() || !experienceInput.role.trim()) return;
+    const currentLen = arr(formData.experience).length;
+    if (currentLen >= LIMITS.experience) {
       setNotice(`Maximum ${LIMITS.experience} work experience entries allowed`);
       setTimeout(() => setNotice(""), 2000);
       return;
     }
-    setFormData((prev) => ({
-      ...prev,
-      experience: [
-        ...prev.experience,
+    setFormData((prev) => {
+      const newExp = [
+        ...arr(prev.experience),
         {
-          company: experienceInput.company,
-          role: experienceInput.role,
-          date: experienceInput.date,
+          company: safeString(experienceInput.company),
+          role: safeString(experienceInput.role),
+          date: safeString(experienceInput.date),
           bullets: ensureString(experienceInput.bullets)
-            ? ensureString(experienceInput.bullets).split("\n")
+            ? ensureString(experienceInput.bullets).split("\n").map((s) => safeString(s)).filter(Boolean)
             : [],
         },
-      ],
-    }));
+      ].slice(0, LIMITS.experience);
+      return { ...prev, experience: newExp };
+    });
     setExperienceInput({ company: "", role: "", date: "", bullets: "" });
   };
 
   const removeExperience = (i) => {
-    setFormData((prev) => ({ ...prev, experience: prev.experience.filter((_, idx) => idx !== i) }));
+    setFormData((prev) => ({ ...prev, experience: arr(prev.experience).filter((_, idx) => idx !== i) }));
   };
 
   // Projects
   const handleProjectChange = (e) => {
-    setProjectInput((prev) => ({ ...prev, [e.target.name]: e.target.value }));
+    setProjectInput((prev) => ({ ...prev, [e.target.name]: safeString(e.target.value) }));
   };
 
   const addProject = () => {
-    if (!projectInput.name) return;
-    if (formData.projects.length >= LIMITS.projects) {
+    if (!projectInput.name.trim()) return;
+    const currentLen = arr(formData.projects).length;
+    if (currentLen >= LIMITS.projects) {
       setNotice(`Maximum ${LIMITS.projects} projects allowed`);
       setTimeout(() => setNotice(""), 2000);
       return;
     }
-    setFormData((prev) => ({
-      ...prev,
-      projects: [
-        ...prev.projects,
-        { name: projectInput.name, bullets: projectInput.bullets ? projectInput.bullets.split("\n") : [] },
-      ],
-    }));
+    setFormData((prev) => {
+      const newProjects = [
+        ...arr(prev.projects),
+        {
+          name: safeString(projectInput.name),
+          bullets: projectInput.bullets ? projectInput.bullets.split("\n").map((s) => safeString(s)).filter(Boolean) : [],
+        },
+      ].slice(0, LIMITS.projects);
+      return { ...prev, projects: newProjects };
+    });
     setProjectInput({ name: "", bullets: "" });
   };
 
   const removeProject = (i) => {
-    setFormData((prev) => ({ ...prev, projects: prev.projects.filter((_, idx) => idx !== i) }));
+    setFormData((prev) => ({ ...prev, projects: arr(prev.projects).filter((_, idx) => idx !== i) }));
   };
 
-  // Enhance functions (unchanged)
+  // Enhance functions (unchanged logic but with safety)
   const getEnhancedSummary = async () => {
     try {
       const result = await axios.post("http://localhost:5000/api/summary", {
         role: formData.role,
         summary: formData.summary,
       });
-      const newText = result.data?.enhanced?.summary;
+      const newTextRaw = result.data?.enhanced?.summary;
+      const newText = safeString(newTextRaw).slice(0, LIMITS.summary);
       if (newText) setFormData((prev) => ({ ...prev, summary: newText }));
     } catch (err) {
       alert("Error generating summary");
+      console.error(err);
     }
   };
 
@@ -329,7 +410,8 @@ export default function BuilderPage() {
 
     try {
       const result = await axios.post("http://localhost:5000/api/enhance/enhance", payload);
-      const enhancedArray = result.data.enhanced?.bullets || [];
+      const enhancedArrayRaw = result.data?.enhanced?.bullets || [];
+      const enhancedArray = arr(enhancedArrayRaw).map((x) => safeString(x));
       setExperienceInput((prev) => ({ ...prev, bullets: enhancedArray.join("\n") }));
     } catch (err) {
       setNotice("Enhance failed — check server");
@@ -338,7 +420,7 @@ export default function BuilderPage() {
   };
 
   const enhanceProject = async () => {
-    if (!projectInput.name || !projectInput.bullets.trim()) {
+    if (!projectInput.name.trim() || !projectInput.bullets.trim()) {
       alert("Project name and bullets required");
       return;
     }
@@ -346,12 +428,13 @@ export default function BuilderPage() {
     try {
       const payload = {
         name: projectInput.name,
-        bullets: projectInput.bullets.split("\n"),
+        bullets: projectInput.bullets.split("\n").map((s) => safeString(s)).filter(Boolean),
       };
 
       const result = await axios.post("http://localhost:5000/api/project/enhance", payload);
-      const improvedBullets = result.data?.enhanced;
-      if (!improvedBullets) {
+      const improvedBulletsRaw = result.data?.enhanced;
+      const improvedBullets = arr(improvedBulletsRaw).map((b) => safeString(b));
+      if (!improvedBullets.length) {
         alert("Enhancer returned no data");
         return;
       }
@@ -373,7 +456,7 @@ export default function BuilderPage() {
       const res = await axios.post("http://localhost:5000/api/enhance/predict-skills", {
         role: formData.role.trim(),
       });
-      const s = res.data?.skills || [];
+      const s = arr(res.data?.skills).map((x) => safeString(x));
       setSuggestedSkills(s);
       setShowSuggestions(true);
     } catch (err) {
@@ -383,48 +466,48 @@ export default function BuilderPage() {
   };
 
   const handleClearAll = () => {
-  // Confirm with user (optional)
-  if (!confirm("Clear all resume data? This cannot be undone.")) return;
+    if (!confirm("Clear all resume data? This cannot be undone.")) return;
 
-  // Use functional update to ensure we get the latest prev state
-  setFormData(prev => {
-    const preservedTemplate = typeof prev?.templateIndex !== "undefined" ? prev.templateIndex : 0;
-    const newForm = { ...DEFAULT_FORM, templateIndex: preservedTemplate };
+    setFormData((prev) => {
+      const preservedTemplate = typeof prev?.templateIndex === "number" ? prev.templateIndex : 0;
+      const newForm = { ...DEFAULT_FORM, templateIndex: clampIndex(preservedTemplate, templates.length) };
+      try {
+        localStorage.setItem(STORAGE_KEY, JSON.stringify(newForm));
+      } catch (e) {
+        console.warn("Could not write cleared data to localStorage", e);
+      }
+      return newForm;
+    });
 
-    // persist immediately
-    try {
-      localStorage.setItem("resume-builder-data", JSON.stringify(newForm));
-    } catch (e) {
-      console.warn("Could not write cleared data to localStorage", e);
-    }
-
-    return newForm;
-  });
-
-  // Clear local input states you use for small add-forms
-  setEducationInput({ year: "", college: "", details: "" });
-  setExperienceInput({ company: "", role: "", date: "", bullets: "" });
-  setSkillInput("");
-  setLanguageInput("");
-  setProjectInput({ name: "", bullets: "" });
-
-  // any other UI state that needs reset
-  setSuggestedSkills([]);
-  setShowSuggestions(false);
-  setNotice("");
-};
-
+    setEducationInput({ year: "", college: "", details: "" });
+    setExperienceInput({ company: "", role: "", date: "", bullets: "" });
+    setSkillInput("");
+    setLanguageInput("");
+    setProjectInput({ name: "", bullets: "" });
+    setSuggestedSkills([]);
+    setShowSuggestions(false);
+    setNotice("");
+  };
 
   // Preview: simply push to /preview — preview page should read localStorage.
   const goToPreview = () => {
-    // ensure latest data is saved (useEffect already saves, but do it explicitly)
     try {
-      localStorage.setItem(STORAGE_KEY, JSON.stringify(formData));
+      const safe = sanitizeFormData(formData);
+      localStorage.setItem(STORAGE_KEY, JSON.stringify(safe));
     } catch { }
     router.push("/preview");
   };
 
-  // UI --- kept close to original, with template dropdown removed.
+  // Safe derived UI values
+  const safeSummary = safeString(formData.summary);
+  const educationLen = arr(formData.education).length;
+  const skillsLen = arr(formData.skills).length;
+  const experienceLen = arr(formData.experience).length;
+  const projectsLen = arr(formData.projects).length;
+  const languagesLen = arr(formData.languages).length;
+  const achievementsLen = arr(formData.achievements).length;
+
+  // UI --- kept close to original, but using safe values
   return (
     <div className="min-h-screen bg-[#0d0d0f] text-gray-100">
       <h1>Decade</h1>
@@ -466,9 +549,15 @@ export default function BuilderPage() {
                 </div>
                 <input name="website" value={formData.website} onChange={handleChange} placeholder="Website" className="w-full rounded-md border border-gray-200 p-2 mt-2" />
                 <input name="address" value={formData.address} onChange={handleChange} placeholder="City, Country" className="w-full rounded-md border border-gray-200 p-2 mt-2" />
-                <textarea name="summary" value={formData.summary} onChange={handleChange} placeholder="Short summary (max 450 chars)" className="w-full rounded-md border border-gray-200 p-2 mt-2 h-28" />
+                <textarea
+                  name="summary"
+                  value={safeSummary}
+                  onChange={handleChange}
+                  placeholder="Short summary (max 450 chars)"
+                  className="w-full rounded-md border border-gray-200 p-2 mt-2 h-28"
+                />
                 <div className="flex justify-between items-center text-sm text-gray-500 mt-1">
-                  <span>{formData.summary.length}/{LIMITS.summary}</span>
+                  <span>{safeSummary.length}/{LIMITS.summary}</span>
                   <div className="flex gap-2">
                     <button className="px-3 py-1 bg-gray-50 rounded-md text-sm" disabled>←</button>
                     <button onClick={getEnhancedSummary} className="px-3 py-1 bg-gray-50 rounded-md text-sm">Enhance</button>
@@ -485,12 +574,12 @@ export default function BuilderPage() {
                 <input name="college" value={educationInput.college} onChange={handleEducationChange} placeholder="University Name" className="w-full rounded-md border border-gray-200 p-2 mt-2" />
                 <textarea name="details" value={educationInput.details} onChange={handleEducationChange} placeholder="• bullet per line" className="w-full rounded-md border border-gray-200 p-2 mt-2 h-20" />
                 <div className="flex gap-2 mt-3">
-                  <button onClick={addEducation} disabled={formData.education.length >= LIMITS.education} className={`px-3 py-2 rounded-md text-sm ${formData.education.length >= LIMITS.education ? "bg-gray-200 text-gray-400" : "bg-gray-900 text-white"}`}>Add</button>
+                  <button onClick={addEducation} disabled={educationLen >= LIMITS.education} className={`px-3 py-2 rounded-md text-sm ${educationLen >= LIMITS.education ? "bg-gray-200 text-gray-400" : "bg-gray-900 text-white"}`}>Add</button>
                   <button onClick={() => setEducationInput({ year: "", college: "", details: "" })} className="px-3 py-2 rounded-md bg-gray-50 text-sm border border-gray-100">Clear</button>
                 </div>
 
                 <div className="mt-3 space-y-2">
-                  {formData.education.map((e, i) => (
+                  {arr(formData.education).map((e, i) => (
                     <div key={i} className="p-3 bg-gray-50 rounded-md flex justify-between items-center">
                       <div>
                         <div className="font-semibold text-sm">{e.college}</div>
@@ -499,7 +588,7 @@ export default function BuilderPage() {
                       <button onClick={() => removeEducation(i)} className="text-xs text-red-500">Remove</button>
                     </div>
                   ))}
-                  {formData.education.length === 0 && <div className="text-sm text-gray-400">No education added</div>}
+                  {educationLen === 0 && <div className="text-sm text-gray-400">No education added</div>}
                 </div>
 
                 <div className="flex justify-between mt-4">
@@ -518,12 +607,12 @@ export default function BuilderPage() {
                 <textarea name="bullets" value={ensureString(experienceInput.bullets)} onChange={handleExperienceChange} placeholder="• bullet per line" className="w-full rounded-md border border-gray-200 p-2 mt-2 h-28" />
 
                 <div className="flex gap-2 mt-3">
-                  <button onClick={addExperience} disabled={formData.experience.length >= LIMITS.experience} className={`px-3 py-2 rounded-md text-sm ${formData.experience.length >= LIMITS.experience ? "bg-gray-200 text-gray-400" : "bg-gray-900 text-white"}`}>Add</button>
+                  <button onClick={addExperience} disabled={experienceLen >= LIMITS.experience} className={`px-3 py-2 rounded-md text-sm ${experienceLen >= LIMITS.experience ? "bg-gray-200 text-gray-400" : "bg-gray-900 text-white"}`}>Add</button>
                   <button onClick={getEnhancedData} className="px-3 py-2 rounded-md text-sm bg-gray-700 text-white">Enhance ✨</button>
                 </div>
 
                 <div className="mt-3 space-y-3">
-                  {formData.experience.map((ex, i) => (
+                  {arr(formData.experience).map((ex, i) => (
                     <div key={i} className="p-3 bg-gray-50 rounded-md border border-gray-100">
                       <div className="flex justify-between items-start">
                         <div>
@@ -534,7 +623,7 @@ export default function BuilderPage() {
                       </div>
 
                       <ul className="mt-2 text-sm text-gray-700 list-disc ml-5">
-                        {ex.bullets.map((b, bi) => <li key={bi}>{b}</li>)}
+                        {arr(ex.bullets).map((b, bi) => <li key={bi}>{b}</li>)}
                       </ul>
 
                       <div className="text-right">
@@ -542,7 +631,7 @@ export default function BuilderPage() {
                       </div>
                     </div>
                   ))}
-                  {formData.experience.length === 0 && <div className="text-sm text-gray-400">No experience added</div>}
+                  {experienceLen === 0 && <div className="text-sm text-gray-400">No experience added</div>}
                 </div>
 
                 <div className="flex justify-between mt-4">
@@ -557,11 +646,11 @@ export default function BuilderPage() {
                 <h4 className="text-lg font-semibold">Skills & Languages</h4>
                 <div className="flex items-center gap-2">
                   <input value={skillInput} onChange={(e) => setSkillInput(e.target.value)} placeholder="React, Tailwind..." className="flex-1 rounded-md border border-gray-200 p-2" />
-                  <button onClick={addSkill} disabled={formData.skills.length >= LIMITS.skills} className={`px-3 py-2 rounded-md ${formData.skills.length >= LIMITS.skills ? "bg-gray-200 text-gray-400" : "bg-gray-900 text-white"}`}>Add</button>
+                  <button onClick={addSkill} disabled={skillsLen >= LIMITS.skills} className={`px-3 py-2 rounded-md ${skillsLen >= LIMITS.skills ? "bg-gray-200 text-gray-400" : "bg-gray-900 text-white"}`}>Add</button>
                 </div>
 
                 <div className="flex flex-wrap gap-2 mt-2">
-                  {formData.skills.map((s, i) => (
+                  {arr(formData.skills).map((s, i) => (
                     <span key={i} className="px-3 py-1 bg-gray-100 rounded-md text-sm flex items-center gap-2">
                       {s}
                       <button onClick={() => removeSkill(i)} className="text-xs text-gray-500">✕</button>
@@ -581,13 +670,13 @@ export default function BuilderPage() {
                         <button
                           key={i}
                           onClick={() => {
-                            if (!formData.skills.includes(skill)) {
-                              if (formData.skills.length >= LIMITS.skills) {
+                            if (!arr(formData.skills).includes(skill)) {
+                              if (arr(formData.skills).length >= LIMITS.skills) {
                                 setNotice(`Maximum ${LIMITS.skills} skills allowed`);
                                 setTimeout(() => setNotice(""), 2000);
                                 return;
                               }
-                              setFormData((prev) => ({ ...prev, skills: [...prev.skills, skill] }));
+                              setFormData((prev) => ({ ...prev, skills: [...arr(prev.skills), skill].slice(0, LIMITS.skills) }));
                             }
                           }}
                           className="text-sm px-2 py-1 bg-white border border-gray-200 rounded-md"
@@ -603,11 +692,11 @@ export default function BuilderPage() {
 
                 <div className="flex items-center gap-2">
                   <input value={languageInput} onChange={(e) => setLanguageInput(e.target.value)} placeholder="English — Fluent" className="flex-1 rounded-md border border-gray-200 p-2" />
-                  <button onClick={addLanguage} disabled={formData.languages.length >= LIMITS.languages} className={`px-3 py-2 rounded-md ${formData.languages.length >= LIMITS.languages ? "bg-gray-200 text-gray-400" : "bg-gray-900 text-white"}`}>Add</button>
+                  <button onClick={addLanguage} disabled={languagesLen >= LIMITS.languages} className={`px-3 py-2 rounded-md ${languagesLen >= LIMITS.languages ? "bg-gray-200 text-gray-400" : "bg-gray-900 text-white"}`}>Add</button>
                 </div>
 
                 <div className="flex flex-wrap gap-2 mt-2">
-                  {formData.languages.map((l, i) => (
+                  {arr(formData.languages).map((l, i) => (
                     <span key={i} className="px-3 py-1 bg-gray-100 rounded-md text-sm flex items-center gap-2">
                       {l}
                       <button onClick={() => removeLanguage(i)} className="text-xs text-gray-500">✕</button>
@@ -628,8 +717,8 @@ export default function BuilderPage() {
                 <div className="flex items-center gap-2 mb-4 mt-1">
                   <input
                     type="checkbox"
-                    checked={formData.useAchievements || false}
-                    onChange={(e) => setFormData(prev => ({ ...prev, useAchievements: e.target.checked }))}
+                    checked={Boolean(formData.useAchievements)}
+                    onChange={(e) => setFormData(prev => ({ ...prev, useAchievements: Boolean(e.target.checked) }))}
                     className="w-4 h-4"
                   />
                   <label className="text-sm text-gray-700">Use Achievements instead of Projects</label>
@@ -637,10 +726,10 @@ export default function BuilderPage() {
 
                 {formData.useAchievements ? (
                   <>
-                    <textarea placeholder="• Achievement per line (max 6)" value={projectInput.bullets} onChange={(e) => setProjectInput(prev => ({ ...prev, bullets: e.target.value }))} className="w-full rounded-md border border-gray-200 p-2 h-28" />
+                    <textarea placeholder="• Achievement per line (max 6)" value={projectInput.bullets} onChange={(e) => setProjectInput(prev => ({ ...prev, bullets: safeString(e.target.value) }))} className="w-full rounded-md border border-gray-200 p-2 h-28" />
                     <div className="flex gap-2 mt-3">
                       <button onClick={() => {
-                        const lines = projectInput.bullets.split("\n").filter(x => x.trim() !== "");
+                        const lines = safeString(projectInput.bullets).split("\n").map(s => s.trim()).filter(Boolean);
                         if (lines.length > 6) { alert("Only 6 achievements allowed"); return; }
                         setFormData(prev => ({ ...prev, achievements: lines }));
                       }} className="px-4 py-2 bg-gray-900 text-white rounded-md text-sm">Save Achievements</button>
@@ -648,13 +737,13 @@ export default function BuilderPage() {
                     </div>
 
                     <div className="mt-4 space-y-3">
-                      {(formData.achievements || []).map((a, i) => (
+                      {arr(formData.achievements).map((a, i) => (
                         <div key={i} className="p-3 bg-gray-50 rounded-md flex justify-between items-center">
                           <span className="text-sm">{a}</span>
-                          <button onClick={() => setFormData(prev => ({ ...prev, achievements: prev.achievements.filter((_, idx) => idx !== i) }))} className="text-xs text-red-500">Remove</button>
+                          <button onClick={() => setFormData(prev => ({ ...prev, achievements: arr(prev.achievements).filter((_, idx) => idx !== i) }))} className="text-xs text-red-500">Remove</button>
                         </div>
                       ))}
-                      {(formData.achievements || []).length === 0 && <div className="text-sm text-gray-400">No achievements added</div>}
+                      {achievementsLen === 0 && <div className="text-sm text-gray-400">No achievements added</div>}
                     </div>
                   </>
                 ) : (
@@ -662,24 +751,24 @@ export default function BuilderPage() {
                     <input name="name" value={projectInput.name} onChange={handleProjectChange} placeholder="Project Name" className="w-full rounded-md border border-gray-200 p-2" />
                     <textarea name="bullets" value={projectInput.bullets} onChange={handleProjectChange} placeholder="• bullet per line" className="w-full rounded-md border border-gray-200 p-2 mt-2 h-24" />
                     <div className="flex gap-2 mt-3">
-                      <button onClick={addProject} disabled={formData.projects.length >= LIMITS.projects} className={`px-3 py-2 rounded-md text-sm ${formData.projects.length >= LIMITS.projects ? "bg-gray-200 text-gray-400" : "bg-gray-900 text-white"}`}>Add</button>
+                      <button onClick={addProject} disabled={projectsLen >= LIMITS.projects} className={`px-3 py-2 rounded-md text-sm ${projectsLen >= LIMITS.projects ? "bg-gray-200 text-gray-400" : "bg-gray-900 text-white"}`}>Add</button>
                       <button onClick={enhanceProject} className="px-5 py-3 bg-purple-600 rounded-md hover:bg-purple-700">Enhance ✨</button>
                       <button onClick={() => setProjectInput({ name: "", bullets: "" })} className="px-3 py-2 rounded-md bg-gray-50 text-sm border border-gray-100">Clear</button>
                     </div>
 
                     <div className="mt-3 space-y-3">
-                      {formData.projects.map((p, i) => (
+                      {arr(formData.projects).map((p, i) => (
                         <div key={i} className="p-3 bg-gray-50 rounded-md">
                           <div className="flex justify-between">
                             <div className="font-semibold">{p.name}</div>
                             <button onClick={() => removeProject(i)} className="text-xs text-red-500">Remove</button>
                           </div>
                           <ul className="list-disc ml-5 mt-2 text-sm text-gray-700">
-                            {p.bullets.map((b, bi) => <li key={bi}>{b}</li>)}
+                            {arr(p.bullets).map((b, bi) => <li key={bi}>{b}</li>)}
                           </ul>
                         </div>
                       ))}
-                      {formData.projects.length === 0 && <div className="text-sm text-gray-400">No projects added</div>}
+                      {projectsLen === 0 && <div className="text-sm text-gray-400">No projects added</div>}
                     </div>
                   </>
                 )}
@@ -712,7 +801,7 @@ export default function BuilderPage() {
                   borderRadius: 8,
                   overflow: "hidden",
                 }}>
-                  {/* Render the selected template using current formData */}
+                  {/* Render the selected template using current formData safely */}
                   <SelectedTemplate data={formData} />
                 </div>
               </div>
@@ -720,8 +809,7 @@ export default function BuilderPage() {
               <div className="mt-4 flex gap-2">
                 <button onClick={goToPreview} className="px-4 py-2 bg-gray-900 text-white rounded-md">Preview Resume</button>
                 <button onClick={() => {
-                  // quick "save snapshot" - ensures storage has latest (useful before pdf generation)
-                  try { localStorage.setItem(STORAGE_KEY, JSON.stringify(formData)); } catch { }
+                  try { localStorage.setItem(STORAGE_KEY, JSON.stringify(sanitizeFormData(formData))); } catch { }
                   setNotice("Saved");
                 }} className="px-4 py-2 bg-gray-50 border rounded-md">Save</button>
               </div>

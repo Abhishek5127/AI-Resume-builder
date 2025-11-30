@@ -73,7 +73,7 @@ export default function Hero() {
             <h1 className="text-5xl md:text-7xl font-extrabold leading-tight tracking-tight">
               Create a  
               <span className="block text-transparent bg-clip-text bg-gradient-to-r from-yellow-300 to-yellow-500">
-                Futuristic Resume
+                Futuristic Resumes
               </span>
               Powered by AI
             </h1>
