@@ -8,19 +8,19 @@ import projectRoutes from "./routes/project.route.js";
 
 const app = express();
 
-// ALLOW YOUR FRONTEND DOMAIN ONLY
+// -------- FIXED CORS FOR RENDER --------
 app.use(
   cors({
-    origin: "https://ai-resume-builder-5koy.onrender.com",
+    origin: ["https://ai-resume-builder-5koy.onrender.com"], // YOUR FRONTEND URL
     methods: ["GET", "POST", "PUT", "DELETE", "OPTIONS"],
     allowedHeaders: ["Content-Type", "Authorization"],
     credentials: true,
   })
 );
 
-// For preflight CORS checks
 app.options("*", cors());
 
+// ---------------------------------------
 app.use(express.json());
 
 // ROUTES
