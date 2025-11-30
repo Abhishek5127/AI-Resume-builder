@@ -1,0 +1,11 @@
+.footer-icon {
+  font-size: 20px;
+  color: #d6d6d6;
+  transition: 0.3s ease;
+}
+
+.footer-icon:hover {
+  color: #ffe45c;
+  text-shadow: 0 0 10px rgba(255, 232, 95, 0.9);
+  transform: scale(1.15);
+}

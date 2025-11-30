@@ -427,7 +427,7 @@ export default function BuilderPage() {
   // UI --- kept close to original, with template dropdown removed.
   return (
     <div className="min-h-screen bg-[#0d0d0f] text-gray-100">
-      <Navbar />
+      <h1>Decade</h1>
       <div className="max-w-[1500px] mx-auto p-6 md:p-10 grid grid-cols-1 lg:grid-cols-[520px_1fr] gap-8">
         {/* LEFT FORM */}
         <div className="bg-white rounded-xl shadow-lg p-6 text-gray-900">

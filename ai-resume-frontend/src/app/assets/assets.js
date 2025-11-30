@@ -6,6 +6,7 @@ import UserDetails from "./userDetails.svg";
 import ResumeTemplate from "./ResumeTemplate.png"
 import ResumeTemplate2 from "./ResumeTemplate2.png"
 import Resume from "./Resume.svg"
+import ResumeTemplate3 from './ResumeTemplate3.png'
 
 
 
@@ -17,5 +18,7 @@ export const assets = {
     UserDetails,
     ResumeTemplate,
     ResumeTemplate2,
+    ResumeTemplate3,
     Resume
+
 }
