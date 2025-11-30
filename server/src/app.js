@@ -28,6 +28,5 @@ app.use("/api/resume", resumeRoutes);
 app.use("/api/enhance", enhanceRoutes);
 app.use("/api/summary", summaryRoutes);
 app.use("/api/project", projectRoutes);
-app.use("/api/predict-skills", enhanceRoutes);
 
 export default app;

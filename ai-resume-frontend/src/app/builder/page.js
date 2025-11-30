@@ -453,7 +453,7 @@ export default function BuilderPage() {
       return;
     }
     try {
-      const res = await axios.post("https://ai-resume-builder-qgwa.onrender.com//api/enhance/predict-skills", {
+      const res = await axios.post("https://ai-resume-builder-qgwa.onrender.com/api/enhance/predict-skills", {
         role: formData.role.trim(),
       });
       const s = arr(res.data?.skills).map((x) => safeString(x));
