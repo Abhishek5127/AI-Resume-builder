@@ -1,4 +1,4 @@
-import TemplateCard from "@/components/templates/TemplateCard";
+import TemplateCard from "./TemplateCard.jsx";
 
 export default function TemplatesPage() {
   const templates = [
