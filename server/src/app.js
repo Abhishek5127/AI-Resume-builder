@@ -12,7 +12,7 @@ const app = express();
 app.use(cors({
   origin: [
     "https://ai-resume-builder-bu76o6x9c-abhishek5127s-projects.vercel.app",
-    "https://builderai-resume.vercel.app/",
+    "https://builderai-resume.vercel.app",
     "https://ai-resume-builder-5koy.onrender.com"
   ],
   methods: ["GET", "POST", "PUT", "DELETE", "OPTIONS"],
