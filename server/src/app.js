@@ -9,14 +9,15 @@ import projectRoutes from "./routes/project.route.js";
 const app = express();
 
 // -------- FIXED CORS FOR RENDER --------
-app.use(
-  cors({
-    origin: ["https://ai-resume-builder-5koy.onrender.com"], // YOUR FRONTEND URL
-    methods: ["GET", "POST", "PUT", "DELETE", "OPTIONS"],
-    allowedHeaders: ["Content-Type", "Authorization"],
-    credentials: true,
-  })
-);
+app.use(cors({
+  origin: [
+    "https://ai-resume-builder.vercel.app",
+    "https://ai-resume-builder-5koy.onrender.com"
+  ],
+  methods: ["GET", "POST", "PUT", "DELETE", "OPTIONS"],
+  allowedHeaders: ["Content-Type", "Authorization"],
+  credentials: true
+}));
 
 app.options("*", cors());
 
