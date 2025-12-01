@@ -11,7 +11,7 @@ const app = express();
 // -------- FIXED CORS FOR RENDER --------
 app.use(cors({
   origin: [
-    "https://ai-resume-builder.vercel.app",
+    "https://ai-resume-builder-bu76o6x9c-abhishek5127s-projects.vercel.app",
     "https://ai-resume-builder-5koy.onrender.com"
   ],
   methods: ["GET", "POST", "PUT", "DELETE", "OPTIONS"],
